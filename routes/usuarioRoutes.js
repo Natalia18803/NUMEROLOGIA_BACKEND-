@@ -27,7 +27,8 @@ router.post('/login', usuarioControllers.login);
 // A partir de aquí, todas las rutas pasan por la validación de Token
 router.use(validarJWT);
 
-// Perfil de usuario autenticado
+// Perfil de usuario autenticado (Ambas rutas para compatibilidad)
+router.get('/', usuarioControllers.getPerfil);
 router.get('/perfil', usuarioControllers.getPerfil);
 
 // ==========================================
