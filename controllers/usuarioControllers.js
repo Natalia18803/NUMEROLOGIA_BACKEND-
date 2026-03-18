@@ -43,11 +43,10 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Validación de seguridad: Verificar si el rol coincide con la selección del frontend
-        // Esto evita que un usuario entre al panel de admin solo por presionar un botón
+        // Validación estricta del rol seleccionado en el front vs la DB
         if (rolReclamado && usuario.rol !== rolReclamado) {
             return res.status(403).json({ 
-                error: `Acceso denegado. Esta cuenta no tiene permisos de ${rolReclamado}.` 
+                error: `Acceso denegado. No tienes permisos de '${rolReclamado}'.` 
             });
         }
 

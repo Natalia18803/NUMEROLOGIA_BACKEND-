@@ -61,7 +61,8 @@ const seedAdmin = async () => {
     console.error('Error en seed admin:', error);
   }
 };
-seedAdmin();
+// Ocultamos la ejecución en producción para evitar regeneración o problemas
+// seedAdmin();
 
 // Helper para generar token (ya no se usa aquí pero lo dejamos si es necesario para el index)
 const generarToken = (id) => {
@@ -83,7 +84,7 @@ app.use('/api/pagos', pagoRoutes);
 app.use('/api/lecturas', lecturaRoutes);
 
 // Ruta de prueba
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.send('API de Numerologia funcionando - Registro sin token requerido');
 });
 
