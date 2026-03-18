@@ -1,0 +1,46 @@
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+const usuarioSchema = new mongoose.Schema({
+    nombre: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true,
+        trim: true
+    },
+    password: {
+        type: String,
+        required: true
+    },
+    fecha_nacimiento: {
+        type: Date,
+        required: true
+    },
+    estado: {
+        type: String,
+        enum: ['activo', 'inactivo'],
+        default: 'inactivo'
+    },
+    rol: {
+        type: String,
+        enum: ['usuario', 'admin'],
+        default: 'usuario'
+    },
+    fecha_registro: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Metodo para comparar passwords
+usuarioSchema.methods.compararPassword = async function(password) {
+    return await bcrypt.compare(password, this.password);
+};
+
+export default mongoose.model('Usuario', usuarioSchema);

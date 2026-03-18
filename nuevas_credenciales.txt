@@ -1,0 +1,22 @@
+=== NUEVAS CREDENCIALES DE ACCESO ===
+
+Nombre: Admin General 1
+Email: admin_gen1@test.com
+Password: admin_password_1
+Rol: admin
+-----------------------------------
+Nombre: Admin General 2
+Email: admin_gen2@test.com
+Password: admin_password_2
+Rol: admin
+-----------------------------------
+Nombre: Usuario Test 1
+Email: user_test1@test.com
+Password: user_password_1
+Rol: usuario
+-----------------------------------
+Nombre: Usuario Test 2
+Email: user_test2@test.com
+Password: user_password_2
+Rol: usuario
+-----------------------------------
