@@ -14,7 +14,7 @@ import { validarRol } from '../middlewares/validar-rol.js';
 // ==========================================
 
 // Registro de usuario
-router.post('/registro', usuarioControllers.registro);
+router.post('/register', usuarioControllers.registro);
 
 // Login de usuario
 router.post('/login', usuarioControllers.login);
