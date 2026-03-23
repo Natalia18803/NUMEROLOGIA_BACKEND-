@@ -111,16 +111,21 @@ app.get('*', (req, res) => {
 // Puerto del servidor
 const PORT = process.env.PORT || 3000;
 
-// Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    console.log('');
-    console.log('RUTAS DISPONIBLES EN /api/auth (y /api/usuarios):');
-    console.log('  POST /api/auth/registro - Registro de usuario');
-    console.log('  POST /api/auth/login    - Login de usuario');
-    console.log('  GET  /api/auth/perfil   - Obtener usuario autenticado');
-    console.log('');
-    console.log('OTRAS RUTAS:');
-    console.log('  /api/pagos/*            - Rutas de pagos');
-    console.log('  /api/lecturas/*         - Rutas de lecturas');
-});
+// Solo levantar el servidor en local (no en Vercel)
+if (process.env.VERCEL !== '1') {
+    app.listen(PORT, () => {
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+        console.log('');
+        console.log('RUTAS DISPONIBLES EN /api/auth (y /api/usuarios):');
+        console.log('  POST /api/auth/registro - Registro de usuario');
+        console.log('  POST /api/auth/login    - Login de usuario');
+        console.log('  GET  /api/auth/perfil   - Obtener usuario autenticado');
+        console.log('');
+        console.log('OTRAS RUTAS:');
+        console.log('  /api/pagos/*            - Rutas de pagos');
+        console.log('  /api/lecturas/*         - Rutas de lecturas');
+    });
+}
+
+// Exportar la app para Vercel (serverless)
+export default app;
