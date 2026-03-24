@@ -1,0 +1,10 @@
+Nombre: Juan Pérez, Email: juan@example.com
+Nombre: María Gómez, Email: maria@example.com
+Nombre: Carlos Ruiz, Email: carlos.ruiz@example.com
+Nombre: Juan Martin, Email: martin@example.com
+Nombre: Natalia Hernandez, Email: natis11@example.com
+Nombre: Natalia Hernandez, Email: natis@example.com
+Nombre: Natalia Hernandez, Email: natis12@example.com
+Nombre: Test User, Email: testuser@example.com
+Nombre: Usuario Activo, Email: activo@example.com
+Nombre: Admin Master, Email: admin@admin.com

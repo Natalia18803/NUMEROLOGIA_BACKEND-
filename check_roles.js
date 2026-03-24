@@ -9,9 +9,12 @@ async function main() {
     try {
         await client.connect();
         const users = await client.db('test').collection('usuarios').find({}).toArray();
+        const fs = await import('fs');
+        let output = "";
         for (const u of users) {
-             console.log(`Email: ${u.email}, Rol real en DB: '${u.rol}', Tipo de rol: ${typeof u.rol}`);
+             output += `Nombre: ${u.nombre}, Email: ${u.email}\n`;
         }
+        fs.writeFileSync('lis_check.txt', output, 'utf8');
     } catch (e) {
         console.error(e);
     } finally {
