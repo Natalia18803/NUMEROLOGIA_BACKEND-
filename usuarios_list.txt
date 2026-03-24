@@ -1,0 +1,10 @@
+Juan Pérez - juan@example.com - Rol: usuario - Estado: activo
+María Gómez - maria@example.com - Rol: usuario - Estado: inactivo
+Carlos Ruiz - carlos.ruiz@example.com - Rol: usuario - Estado: activo
+Juan Martin - martin@example.com - Rol: usuario - Estado: activo
+Natalia Hernandez - natis11@example.com - Rol: usuario - Estado: inactivo
+Natalia Hernandez - natis@example.com - Rol: usuario - Estado: inactivo
+Natalia Hernandez - natis12@example.com - Rol: usuario - Estado: inactivo
+Test User - testuser@example.com - Rol: usuario - Estado: inactivo
+Usuario Activo - activo@example.com - Rol: usuario - Estado: activo
+Admin Master - admin@admin.com - Rol: admin - Estado: activo

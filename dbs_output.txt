@@ -1,0 +1,18 @@
+Databases en el cluster:
+ - Lecturas
+ - Numerologia
+ - Pagos
+ - Usuarios
+ - test
+ - admin
+ - local
+
+Colecciones en db 'test':
+ - products (0 documentos)
+ - users (0 documentos)
+ - pagos (0 documentos)
+ - lecturas (0 documentos)
+ - usuarios (10 documentos)
+   Sample: {"_id":"69894fa0b358356e49faf68b","nombre":"Juan Pérez","email":"juan@example.com","fecha_nacimiento":"1990-05-15T00:00:00.000Z","estado":"activo","fecha_registro":"2026-02-09T03:08:16.984Z","__v":0}
+
+Colecciones en db 'numerologia':
