@@ -130,9 +130,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useQuasar } from 'quasar'
+import { useNotify } from '../../composables/useNotify.js'
 
-const $q = useQuasar()
+const { notifySuccess } = useNotify()
 const ticketSeleccionado = ref(null)
 const respuesta = ref('')
 const ticketsAbiertos = ref(24)
@@ -177,7 +177,7 @@ const seleccionarTicket = (ticket) => {
 
 const enviarRespuesta = () => {
   if (!respuesta.value.trim()) return
-  $q.notify({ type: 'positive', message: 'Respuesta enviada correctamente', position: 'top-right' })
+  notifySuccess('Respuesta enviada 📨', 'El usuario recibirá tu mensaje en breve.')
   respuesta.value = ''
   ticketsAbiertos.value--
   // Remover ticket de lista

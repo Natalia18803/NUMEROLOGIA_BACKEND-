@@ -232,11 +232,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/auth'
-import { getData, putData } from '../../services/apiClient'
+import { getData, putData, postData } from '../../services/apiClient'
+import { useNotify } from '../../composables/useNotify.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const usuario = computed(() => authStore.usuario)
+const { notifySuccess, notifyError, notifyWarning } = useNotify()
 
 const activeTab = ref('inicio')
 const lecturas = ref([])
@@ -277,9 +279,11 @@ const guardarCambios = async () => {
   try {
     if (usuario.value?._id) {
       await putData(`/usuarios/${usuario.value._id}`, editForm.value)
+      notifySuccess('Cambios guardados', 'Tu perfil astral ha sido actualizado.')
     }
   } catch (e) {
     console.error('Error guardando cambios:', e)
+    notifyError('No se pudieron guardar los cambios', 'Intenta nuevamente en unos momentos.')
   }
 }
 
@@ -300,7 +304,10 @@ const crearNuevaLectura = async () => {
     router.push('/lectura/' + response.lectura._id);
   } catch (error) {
     console.error('Error creando lectura:', error);
-    alert(error?.response?.data?.error || 'No se pudo crear la lectura');
+    notifyError(
+      error?.response?.data?.error || 'No se pudo crear la lectura',
+      'Verifica tu conexión e intenta nuevamente.'
+    );
   } finally {
     isCreatingLectura.value = false;
   }

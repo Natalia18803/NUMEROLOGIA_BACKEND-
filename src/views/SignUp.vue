@@ -230,8 +230,10 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { postData } from '../services/apiClient.js'
+import { useNotify } from '../composables/useNotify.js'
 
 const router = useRouter()
+const { notifySuccess, notifyError, notifyWarning } = useNotify()
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
@@ -269,7 +271,7 @@ const isFormValid = computed(() => {
 
 const handleSignUp = async () => {
   if (!isFormValid.value) {
-    alert('Por favor completa todos los campos correctamente')
+    notifyWarning('Formulario incompleto', 'Completa todos los campos antes de continuar.')
     return
   }
 
@@ -285,11 +287,14 @@ const handleSignUp = async () => {
     })
 
     console.log('Registro exitoso:', response)
-    alert('Cuenta creada exitosamente. Ahora puedes iniciar sesión.')
+    notifySuccess('¡Bienvenido al Oráculo! ✨', 'Tu cuenta ha sido creada. Ya puedes iniciar sesión.')
     router.push('/login')
   } catch (error) {
     console.error('Error en registro:', error)
-    alert(error.response?.data?.error || 'Error al crear la cuenta')
+    notifyError(
+      error.response?.data?.error || 'Error al crear la cuenta',
+      'Intenta de nuevo o contacta soporte.'
+    )
   } finally {
     isLoading.value = false
   }

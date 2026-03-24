@@ -157,9 +157,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { postData } from '../services/apiClient.js'
 import { useAuthStore } from '../store/auth'
+import { useNotify } from '../composables/useNotify.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { notifySuccess, notifyError, notifyWarning } = useNotify()
 const role = ref('usuario')
 const email = ref('')
 const password = ref('')
@@ -169,7 +171,7 @@ const isLoading = ref(false)
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    alert('Por favor completa todos los campos')
+    notifyWarning('Campos incompletos', 'Por favor completa tu correo y contraseña.')
     return
   }
   
@@ -196,7 +198,10 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('Error en login:', error)
-    alert(error.response?.data?.error || 'Error al iniciar sesión')
+    notifyError(
+      error.response?.data?.error || 'Error al iniciar sesión',
+      'Verifica tus credenciales e intenta nuevamente.'
+    )
   } finally {
     isLoading.value = false
   }

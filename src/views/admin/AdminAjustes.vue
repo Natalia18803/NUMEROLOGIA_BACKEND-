@@ -133,9 +133,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useQuasar } from 'quasar'
+import { useNotify } from '../../composables/useNotify.js'
 
-const $q = useQuasar()
+const { notifySuccess, notifyError } = useNotify()
 
 const config = ref({
   tarifaBase: 45.00,
@@ -160,7 +160,7 @@ const eliminarMiembro = (miembro) => {
 }
 
 const guardar = () => {
-  $q.notify({ type: 'positive', message: 'Configuración guardada exitosamente', position: 'top-right' })
+  notifySuccess('Configuración guardada ✨', 'Los cambios del sistema han sido aplicados correctamente.')
 }
 </script>
 
