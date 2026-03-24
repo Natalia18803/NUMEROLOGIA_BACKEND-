@@ -22,11 +22,14 @@ const app = express();
 app.use(express.json());
 
 // Configuración de CORS dinámica
+// IMPORTANTE: No se puede usar origin:'*' con credentials:true (los navegadores lo rechazan).
+// Por eso usamos una función que aprueba cualquier origen dinámicamente.
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || '*', // Permite el origen del frontend o todos en desarrollo
+    origin: (origin, callback) => callback(null, true),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-    optionsSuccessStatus: 204, allowedHeaders: ['Content-Type', 'x-token', 'Authorization']
+    optionsSuccessStatus: 204,
+    allowedHeaders: ['Content-Type', 'x-token', 'Authorization']
 };
 app.use(cors(corsOptions));
 
