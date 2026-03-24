@@ -228,7 +228,7 @@ const lecturasPopulares = ref([
 onMounted(async () => {
   loading.value = true
   try {
-    const usuarios = await getData('/usuarios')
+    const usuarios = await getData('/usuarios/todos')
     if (usuarios) {
       const total = Array.isArray(usuarios) ? usuarios.length : (usuarios.total || 0)
       kpis.value[1].value = total.toLocaleString()

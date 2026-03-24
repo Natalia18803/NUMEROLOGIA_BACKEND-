@@ -141,7 +141,7 @@ const toggleEstado = (user) => {
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await getData('/usuarios')
+    const res = await getData('/usuarios/todos')
     usuarios.value = Array.isArray(res) ? res : (res.usuarios || [])
     totalUsuarios.value = usuarios.value.length
     // Simular nuevos hoy
