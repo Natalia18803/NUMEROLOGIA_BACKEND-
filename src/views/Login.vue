@@ -198,10 +198,30 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('Error en login:', error)
-    notifyError(
-      error.response?.data?.error || 'Error al iniciar sesión',
-      'Verifica tus credenciales e intenta nuevamente.'
-    )
+    
+    const backendError = error.response?.data?.error || ''
+    
+    if (backendError.includes('Credenciales')) {
+      notifyError(
+        'Las estrellas no se alinean 🌠',
+        'La clave o el correo que has introducido no resuenan en nuestros registros. Inténtalo de nuevo.'
+      )
+    } else if (backendError.includes('Acceso denegado')) {
+      notifyError(
+        'El umbral está sellado 🚪',
+        'Tu energía es poderosa, pero no posees los permisos del plano al que intentas acceder.'
+      )
+    } else if (backendError.includes('encontrado')) {
+      notifyError(
+        'Alma no reconocida 🌌',
+        'No logramos encontrar tu esencia en el oráculo. ¿Acaso no te has registrado aún?'
+      )
+    } else {
+      notifyError(
+        'Perturbación en la red 🔮',
+        'Los vientos cósmicos impiden la conexión en este momento. Aguarda un instante y vuelve a intentarlo.'
+      )
+    }
   } finally {
     isLoading.value = false
   }
