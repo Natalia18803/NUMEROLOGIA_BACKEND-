@@ -232,7 +232,7 @@ const generarLectura = async (tipo) => {
     } else {
         Swal.fire({
             title: 'Energías Bloqueadas',
-            text: data.msg || 'Error al generar lectura.',
+            text: data.error || data.msg || 'Error al generar lectura.',
             icon: 'warning',
             background: '#161224',
             color: '#f8f8f8',

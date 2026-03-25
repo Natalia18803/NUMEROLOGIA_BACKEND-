@@ -4,8 +4,9 @@ import Usuario from '../models/usuario.js';
 // Función simulada para generar contenido de IA
 const generarContenidoIA = (tipo, fecha_nacimiento) => {
   if (tipo === 'principal') {
-    const dia = parseInt(fecha_nacimiento.getDate(), 10);
-    const mes = parseInt(fecha_nacimiento.getMonth() + 1, 10);
+    const fechaObj = new Date(fecha_nacimiento);
+    const dia = parseInt(fechaObj.getUTCDate() || fechaObj.getDate(), 10) || 1;
+    const mes = parseInt((fechaObj.getUTCMonth() || fechaObj.getMonth()) + 1, 10) || 1;
     const numero = dia + mes;
     return `Tu número de vida es ${numero}. Este número representa tu camino espiritual y tus lecciones de vida.`;
   } else {
