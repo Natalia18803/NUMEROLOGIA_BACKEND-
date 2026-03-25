@@ -37,6 +37,15 @@ router.get('/perfil', usuarioControllers.getPerfil);
 // Obtener todos los usuarios - Solo admin (ruta explícita para evitar colisión)
 router.get('/todos', validarRol('admin'), usuarioControllers.getAllUsuarios);
 
+// Crear nuevo usuario (con roles especiales si se requiere) - Solo admin
+router.post('/crear', [
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    check('email', 'Email inválido').isEmail(),
+    check('password', 'Mínimo 6 caracteres').isLength({ min: 6 }),
+    validarCampos,
+    validarRol('admin')
+], usuarioControllers.crearUsuarioAdmin);
+
 // Actualizar estado del usuario - Solo admin
 router.patch('/:id/estado', 
     check('id', 'No es un ID válido').isMongoId(),

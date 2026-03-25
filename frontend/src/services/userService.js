@@ -5,6 +5,10 @@ class UserService {
     return api.get('/usuarios/todos')
   }
 
+  async crearUsuario(usuarioData) {
+    return api.post('/usuarios/crear', usuarioData)
+  }
+
   async updateEstado(usuarioObj) {
     const newState = usuarioObj.estado === 'activo' ? 'inactivo' : 'activo'
     return api.patch(`/usuarios/${usuarioObj._id}/estado`, { estado: newState })

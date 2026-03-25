@@ -1,12 +1,67 @@
 <template>
   <div class="admin-container">
-    <div class="glass-panel">
+    <div class="tabs text-center mb-2">
+      <button :class="['tab-btn', currentTab === 'usuarios' ? 'active' : '']" @click="currentTab = 'usuarios'">
+          <i class="fas fa-users"></i> Usuarios
+      </button>
+      <button :class="['tab-btn', currentTab === 'pagos' ? 'active' : '']" @click="currentTab = 'pagos'">
+          <i class="fas fa-money-bill-wave"></i> Historial de Pagos
+      </button>
+    </div>
+
+    <!-- PESTAÑA USUARIOS -->
+    <div v-show="currentTab === 'usuarios'" class="glass-panel fade-in">
         <div class="dashboard-header mb-2">
             <h3><i class="fas fa-users"></i> Gestión de Usuarios</h3>
-            <div class="stats-badge">Total: {{ users.length }}</div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button @click="showUserForm = !showUserForm" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <i :class="showUserForm ? 'fas fa-times' : 'fas fa-plus'"></i> {{ showUserForm ? 'Cancelar' : 'Nuevo Usuario' }}
+                </button>
+                <div class="stats-badge">Total: {{ users.length }}</div>
+            </div>
         </div>
 
-        <div v-if="loading" class="text-center" style="padding: 3rem;">
+        <!-- Fomulario de Creación Rápida -->
+        <div v-if="showUserForm" class="create-user-panel mb-2">
+            <h4 class="mb-1">Añadir Nueva Entidad a la Matriz</h4>
+            <form @submit.prevent="handleCreateUser" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" v-model="newUser.nombre" required class="form-control" placeholder="Nombre Cósmico">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" v-model="newUser.email" required class="form-control" placeholder="admin@matriz.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" v-model="newUser.password" required minlength="6" class="form-control" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label>Rol</label>
+                        <select v-model="newUser.rol" class="form-control">
+                            <option value="usuario">Usuario</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Estado</label>
+                        <select v-model="newUser.estado" class="form-control">
+                            <option value="inactivo">Inactivo</option>
+                            <option value="activo">Activo</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="grid-column: 1 / -1; text-align: right; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-primary" :disabled="creating">
+                        {{ creating ? 'Inyectando...' : 'Crear Usuario' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div v-if="loadingUsers" class="text-center" style="padding: 3rem;">
             <div class="loading-spinner" style="color: var(--primary-color);">Accediendo a la base de datos...</div>
         </div>
         
@@ -36,7 +91,7 @@
                     </td>
                     <td>{{ u.rol }}</td>
                     <td>
-                        <div v-if="u.rol !== 'admin'" class="action-buttons">
+                        <div v-if="u.email !== store.user.email" class="action-buttons">
                             <button @click="toggleStatus(u)" :class="['btn-action', u.estado === 'activo' ? 'btn-warning' : 'btn-success']" :title="u.estado === 'activo' ? 'Desactivar Cuenta' : 'Activar Cuenta'">
                                 <i :class="u.estado === 'activo' ? 'fas fa-ban' : 'fas fa-check'"></i>
                             </button>
@@ -44,8 +99,44 @@
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <span v-else style="color: gray; font-size: 0.8rem; font-style: italic;">Sin acciones</span>
+                        <span v-else style="color: gray; font-size: 0.8rem; font-style: italic;">Yo</span>
                     </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PESTAÑA PAGOS -->
+    <div v-show="currentTab === 'pagos'" class="glass-panel fade-in">
+        <div class="dashboard-header mb-2">
+            <h3><i class="fas fa-money-bill-wave"></i> Registro Global de Pagos</h3>
+            <div class="stats-badge">Total Transacciones: {{ payments.length }}</div>
+        </div>
+
+        <div v-if="loadingPayments" class="text-center" style="padding: 3rem;">
+            <div class="loading-spinner" style="color: var(--primary-color);">Verificando nodos transaccionales...</div>
+        </div>
+
+        <table v-else class="data-table">
+            <thead>
+                <tr>
+                    <th>ID Transacción</th>
+                    <th>Usuario ID</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Fecha y Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-if="!payments.length">
+                    <td colspan="5" class="text-center">No hay transacciones registradas en el sistema.</td>
+                </tr>
+                <tr v-for="p in payments" :key="p._id">
+                    <td style="font-size:0.85rem; color: #a39cb6;">{{ p._id }}</td>
+                    <td style="font-size:0.85rem;">{{ p.usuario_id }}</td>
+                    <td style="font-weight: bold; color: #28a745;">${{ p.monto }}</td>
+                    <td style="text-transform: capitalize;">{{ p.metodo }}</td>
+                    <td>{{ formatearFechaHora(p.fecha) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -55,30 +146,83 @@
 
 <script setup>
 import Swal from 'sweetalert2'
-import { ref, onMounted } from 'vue'
-import { formatearFecha } from '../utils/formatDate'
+import { ref, onMounted, reactive, watch } from 'vue'
+import { formatearFecha, formatearFechaHora } from '../utils/formatDate'
 import userService from '../services/userService'
+import pagoService from '../services/pagoService'
+import { useGeneralStore } from '../store/General'
 
+const store = useGeneralStore()
+const currentTab = ref('usuarios')
+
+// Usuarios State
 const users = ref([])
-const loading = ref(true)
+const loadingUsers = ref(true)
+const showUserForm = ref(false)
+const creating = ref(false)
+const newUser = reactive({ nombre: '', email: '', password: '', rol: 'usuario', estado: 'inactivo' })
+
+// Pagos State
+const payments = ref([])
+const loadingPayments = ref(false)
 
 const loadUsers = async () => {
-    loading.value = true
+    loadingUsers.value = true
     try {
         const response = await userService.getAllUsuarios()
-        // El array viene expuesto directamente
         users.value = Array.isArray(response.data.usuarios) ? response.data.usuarios : response.data
     } catch (e) {
+        Swal.fire('Error', 'No se pudo cargar la base de usuarios.', 'error')
+    } finally {
+        loadingUsers.value = false
+    }
+}
+
+const loadPayments = async () => {
+    loadingPayments.value = true
+    try {
+        const response = await pagoService.getAllPagos()
+        payments.value = Array.isArray(response.data.pagos) ? response.data.pagos : response.data
+    } catch (e) {
+        // Ignorar o logear
+    } finally {
+        loadingPayments.value = false
+    }
+}
+
+watch(currentTab, (newTab) => {
+    if (newTab === 'pagos' && payments.value.length === 0) {
+        loadPayments()
+    }
+})
+
+const handleCreateUser = async () => {
+    creating.value = true
+    try {
+        await userService.crearUsuario({ ...newUser })
         Swal.fire({
-            title: 'Fallo de Conexión',
-            text: 'No se pudo cargar la base de datos estelar.',
-            icon: 'error',
+            title: '¡Entidad Creada!',
+            text: `El usuario ${newUser.nombre} con el rol ${newUser.rol} se ha inyectado exitosamente.`,
+            icon: 'success',
             background: '#161224',
             color: '#f8f8f8',
             confirmButtonColor: '#d4af37'
         })
+        
+        // Limpiar
+        newUser.nombre = ''
+        newUser.email = ''
+        newUser.password = ''
+        newUser.rol = 'usuario'
+        newUser.estado = 'inactivo'
+        showUserForm.value = false
+        
+        await loadUsers()
+    } catch (error) {
+        const errData = error.response?.data || {}
+        Swal.fire('Fallo de inyección', errData.error || errData.msg || 'Error al crear', 'error')
     } finally {
-        loading.value = false
+        creating.value = false
     }
 }
 
@@ -88,62 +232,40 @@ const toggleStatus = async (user) => {
         await loadUsers()
         Swal.fire({
             title: 'Actualizado',
-            text: `El estado de ${user.nombre} ahora es ${user.estado === 'activo' ? 'inactivo' : 'activo'}`,
+            text: `El estado ha cambiado.`,
             icon: 'success',
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000,
+            timer: 2000,
             background: '#161224',
             color: '#f8f8f8'
         })
     } catch (error) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Hubo un error al actualizar el estado.',
-            icon: 'error',
-            background: '#161224',
-            color: '#f8f8f8',
-            confirmButtonColor: '#d4af37'
-        })
+        Swal.fire('Error', 'Hubo un error al actualizar el estado.', 'error')
     }
 }
 
 const deleteUser = async (id) => {
     const result = await Swal.fire({
         title: '¿Estás completamente seguro?',
-        text: "Esta entidad será borrada de la base de datos permanentemente.",
+        text: "Esta entidad será borrada irrevocablemente.",
         icon: 'warning',
         showCancelButton: true,
         background: '#161224',
         color: '#f8f8f8',
         confirmButtonColor: '#ff4d4d',
         cancelButtonColor: '#a39cb6',
-        confirmButtonText: 'Sí, purgar registro',
-        cancelButtonText: 'Cancelar'
+        confirmButtonText: 'Eliminar'
     })
 
     if (result.isConfirmed) {
         try {
             await userService.deleteUsuario(id)
             await loadUsers()
-            Swal.fire({
-                title: 'Purgado',
-                text: 'El usuario ha sido eliminado.',
-                icon: 'success',
-                background: '#161224',
-                color: '#f8f8f8',
-                confirmButtonColor: '#d4af37'
-            })
+            Swal.fire('Purgado', 'Usuario eliminado.', 'success')
         } catch (error) {
-            Swal.fire({
-                title: 'Error',
-                text: 'El registro no pudo ser purgado.',
-                icon: 'error',
-                background: '#161224',
-                color: '#f8f8f8',
-                confirmButtonColor: '#d4af37'
-            })
+            Swal.fire('Error', 'Error al eliminar.', 'error')
         }
     }
 }
@@ -173,6 +295,15 @@ onMounted(() => {
     border-radius: 20px;
     font-weight: bold;
     color: var(--primary-color);
+}
+.create-user-panel {
+    background: rgba(0,0,0,0.4);
+    border-left: 4px solid var(--primary-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+.form-control {
+    width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.5); background: rgba(0,0,0,0.5); color: #fff;
 }
 .data-table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.3); border-radius: 12px; overflow: hidden; }
 .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -205,4 +336,10 @@ onMounted(() => {
 .btn-success:hover { background: #28a745; color: #fff; }
 .btn-danger { border-color: #ff4d4d; color: #ff4d4d; }
 .btn-danger:hover { background: #ff4d4d; color: #fff; }
+
+.tabs { display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center; }
+.tab-btn { background: transparent; color: var(--text-secondary); border: 1px solid transparent; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-family: var(--font-heading); font-weight: bold; transition: all var(--transition-speed); font-size: 1rem;}
+.tab-btn.active { color: var(--primary-color); background: rgba(212, 175, 55, 0.1); border-color: var(--primary-color); }
+.fade-in { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

@@ -130,4 +130,22 @@ export const deleteUsuario = async (req, res) => {
     }
 };
 
+export const crearUsuarioAdmin = async (req, res) => {
+    try {
+        const { nombre, email, password, fecha_nacimiento, rol, estado } = req.body;
+        const existeUsuario = await Usuario.findOne({ email });
+        if (existeUsuario) return res.status(400).json({ error: 'El email ya está registrado' });
+        
+        const data = { nombre, email, password, fecha_nacimiento, rol: rol || 'usuario', estado: estado || 'inactivo' };
+        // Validar fecha de nacimiento si no viene
+        if (!data.fecha_nacimiento) data.fecha_nacimiento = new Date('1990-01-01');
+
+        const usuario = new Usuario(data);
+        await usuario.save();
+        res.status(201).json({ message: 'Usuario creado exitosamente desde admin', usuario });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 
