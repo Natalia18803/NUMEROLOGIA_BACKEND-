@@ -94,15 +94,19 @@
                     </div>
 
                     <div class="reading-card">
-                        <h4 class="text-center">Lectura Diaria (Hoy)</h4>
+                        <h4 class="text-center">Lectura Diaria (24 horas)</h4>
                         <div class="text-center" style="margin-top: 1.5rem;">
                             <div v-if="dailyReading">
-                                <div class="number-highlight">✨</div>
+                                <div class="number-highlight" style="font-size: 2.2rem; margin-bottom: 0.5rem;">✨ {{ extraerNumero(dailyReading.contenido) }} ✨</div>
                                 <div class="reading-text">{{ dailyReading.contenido }}</div>
-                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
+                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Última: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
+                                
+                                <div v-if="!isToday(dailyReading.fecha_lectura)" style="margin-top: 1.5rem;">
+                                    <button @click="generarLectura('diaria')" class="btn btn-outline" style="width: auto;" :disabled="loadingData">Generar Lectura de Hoy</button>
+                                </div>
                             </div>
                             <div v-else>
-                                <p style="margin-bottom:1rem; font-size:0.9rem;">¿Qué te depara este día?</p>
+                                <p style="margin-bottom:1rem; font-size:0.9rem;">Las constelaciones tienen un mensaje para ti hoy.</p>
                                 <button @click="generarLectura('diaria')" class="btn btn-outline" style="width: auto;" :disabled="loadingData">Generar Lectura de Hoy</button>
                             </div>
                         </div>
@@ -251,7 +255,22 @@ const generarLectura = async (tipo, silent = false) => {
 
 const formatearFecha = (fecha) => {
     if (!fecha) return '...'
-    return new Date(fecha).toLocaleDateString('es-ES')
+    const d = new Date(fecha)
+    return d.toLocaleDateString('es-ES') + ' a las ' + formatTime(fecha)
+}
+
+const formatTime = (fecha) => {
+    if (!fecha) return ''
+    return new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+}
+
+const isToday = (dateString) => {
+    if (!dateString) return false
+    const d = new Date(dateString)
+    const today = new Date()
+    return d.getDate() === today.getDate() && 
+           d.getMonth() === today.getMonth() && 
+           d.getFullYear() === today.getFullYear()
 }
 
 const extraerNumero = (texto) => {

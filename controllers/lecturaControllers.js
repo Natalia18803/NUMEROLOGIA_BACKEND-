@@ -3,15 +3,20 @@ import Usuario from '../models/usuario.js';
 
 // Función simulada para generar contenido de IA
 const generarContenidoIA = (tipo, fecha_nacimiento) => {
-  if (tipo === 'principal') {
     const fechaObj = new Date(fecha_nacimiento);
     const dia = parseInt(fechaObj.getUTCDate() || fechaObj.getDate(), 10) || 1;
     const mes = parseInt((fechaObj.getUTCMonth() || fechaObj.getMonth()) + 1, 10) || 1;
     const numero = dia + mes;
-    return `Tu número de vida es ${numero}. Este número representa tu camino espiritual y tus lecciones de vida.`;
+    
+  if (tipo === 'principal') {
+    return `Tu número astral es el ${numero}. Representa la energía subyacente de tu misión en la vida, guiando tus talentos naturales y los desafíos que debes superar para evolucionar.`;
   } else {
-    const hoy = new Date().toLocaleDateString();
-    return `Lectura diaria para ${hoy}: Hoy es un día propicio para nuevas oportunidades. Mantén una actitud positiva.`;
+    const hoy = new Date();
+    const diaHoy = hoy.getUTCDate();
+    const numDiario = (numero + diaHoy) % 9 || 9; // Ciclo 1-9 de numerología diaria
+    
+    return `Hoy vibras bajo la energía del número ${numDiario} (influenciada por tu número base ${numero}). 
+Mantente alerta a tu intuición; las conexiones celestiales favorecerán tus decisiones durante las próximas 24 horas.`;
   }
 };
 
