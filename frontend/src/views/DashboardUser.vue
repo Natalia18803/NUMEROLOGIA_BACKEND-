@@ -1,10 +1,5 @@
 <template>
   <div>
-    <header style="padding: 1rem 2rem; background: rgba(10, 10, 16, 0.8); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border);">
-        <h2 style="margin:0; font-size:1.5rem;">Mi Portal Numérico</h2>
-        <button @click="logout" class="btn btn-outline" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cerrar Sesión</button>
-    </header>
-
     <div class="user-container">
         <!-- Tabs -->
         <div class="tabs">
@@ -41,7 +36,7 @@
                 <p v-if="user.estado === 'inactivo'" style="margin-bottom: 1rem;">Debes activar tu cuenta para acceder a tus lecturas diarias.</p>
                 <p v-else style="margin-bottom: 1rem; color: #28a745;">¡Tu suscripción está activa!</p>
                 
-                <button @click="simularPago" class="btn btn-primary" :disabled="paying" style="width: auto; min-width: 250px;">
+                <button @click="handlePago" class="btn btn-primary" :disabled="paying" style="width: auto; min-width: 250px;">
                     {{ paying ? 'Procesando...' : (user.estado === 'activo' ? 'Añadir un pago (Simulación)' : 'Pagar Suscripción (Simulación)') }}
                 </button>
             </div>
@@ -88,7 +83,7 @@
                         <div v-if="dailyReading">
                             <div class="daily-highlight">✨ {{ extraerNumero(dailyReading.contenido) }} ✨</div>
                             <p class="hero-text">{{ dailyReading.contenido }}</p>
-                            <p class="hero-date">Alineación calculada el: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
+                            <p class="hero-date">Última Alineación: {{ formatearFechaHora(dailyReading.fecha_lectura) }}</p>
                             
                             <div v-if="!isToday(dailyReading.fecha_lectura)" style="margin-top: 2rem;">
                                 <button @click="generarLectura('diaria')" class="btn btn-primary" :disabled="loadingData">Conectar con el Universo de Hoy</button>
@@ -124,10 +119,13 @@
 <script setup>
 import Swal from 'sweetalert2'
 import { ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { AuthService, apiFetch } from '../api'
+import { formatearFecha, formatearFechaHora, isToday } from '../utils/formatDate'
+import { extraerNumero } from '../utils/extractNumber'
+import { useGeneralStore } from '../store/General'
+import pagoService from '../services/pagoService'
+import lecturaService from '../services/lecturaService'
 
-const router = useRouter()
+const store = useGeneralStore()
 const currentTab = ref('perfil')
 
 const user = ref({})
@@ -139,28 +137,22 @@ const paying = ref(false)
 const loadingData = ref(false)
 
 onMounted(async () => {
-    // 1. Get profile data
-    const { ok, data } = await apiFetch('/auth/perfil')
-    if (!ok) {
-        AuthService.logout()
-        router.push('/')
-        return
-    }
-    // Fix: Backend `getPerfil` returns the user directly
-    user.value = data.usuario || data
-    localStorage.setItem('user', JSON.stringify(user.value))
-
-    // If active, immediately show readings
-    if (user.value.estado === 'activo') {
-        currentTab.value = 'lecturas'
-        loadReadings()
-        loadPayments()
-    } else {
-        currentTab.value = 'perfil'
+    try {
+        const userData = await store.fetchProfile()
+        user.value = userData
+        
+        if (user.value.estado === 'activo') {
+            currentTab.value = 'lecturas'
+            loadReadings()
+            loadPayments()
+        } else {
+            currentTab.value = 'perfil'
+        }
+    } catch (e) {
+        // Handled by store
     }
 })
 
-// Tab Switcher Reactivity
 watch(currentTab, (newTab) => {
     if (newTab === 'pagos') {
         loadPayments()
@@ -171,45 +163,40 @@ watch(currentTab, (newTab) => {
 
 const loadReadings = async () => {
     if (!user.value._id) return
-    const { ok, data } = await apiFetch(`/lecturas/usuario/${user.value._id}`)
-    
-    // Fix: 'data' is already the array [ { lectura1 }, { lectura2 } ]
-    const lecturasArray = Array.isArray(data) ? data : (data.lecturas || [])
-    
-    if (ok && lecturasArray.length >= 0) {
+    try {
+        const response = await lecturaService.getLecturasByUsuario(user.value._id)
+        const lecturasArray = Array.isArray(response.data) ? response.data : (response.data.lecturas || [])
+        
         mainReading.value = lecturasArray.find(l => l.tipo === 'principal') || null
         dailyReading.value = lecturasArray.find(l => l.tipo === 'diaria') || null
         
-        // Auto-Generate main reading if it doesn't exist
         if (!mainReading.value) {
             await generarLectura('principal', true)
         }
-    }
+    } catch(e) {}
 }
 
 const loadPayments = async () => {
     if (!user.value._id) return
-    
-    // We fetch ALL payments as admin or, ideally, as user we could filter out if the backend supports it.
-    // However, the backend /api/pagos/:usuario_id requires the user to be active.
-    // If the user is inactive, we handle the 403 error gracefully.
-    const { ok, data } = await apiFetch(`/pagos/${user.value._id}`)
-    if (ok && data.pagos) {
-        payments.value = data.pagos
-    } else {
-        payments.value = [] // backend probably returned 403 or empty array, which is fine!
+    try {
+        const response = await pagoService.getPagosByUsuario(user.value._id)
+        if (response.data && response.data.pagos) {
+            payments.value = response.data.pagos
+        }
+    } catch(e) {
+        payments.value = []
     }
 }
 
-const simularPago = async () => {
+const handlePago = async () => {
     paying.value = true
-    const { ok, data } = await apiFetch('/pagos', 'POST', {
-        usuario_id: user.value._id,
-        monto: 25.00,
-        metodo: 'tarjeta'
-    })
-    
-    if (ok) {
+    try {
+        await pagoService.createPago({
+            usuario_id: user.value._id,
+            monto: 25.00,
+            metodo: 'tarjeta'
+        })
+        
         Swal.fire({
             title: '¡Suscripción Activada!',
             text: 'Bienvenido al Portal Místico.',
@@ -219,85 +206,53 @@ const simularPago = async () => {
             confirmButtonColor: '#d4af37'
         })
         
-        const profileRes = await apiFetch('/auth/perfil')
-        if (profileRes.ok) {
-            user.value = profileRes.data.usuario || profileRes.data
-            localStorage.setItem('user', JSON.stringify(user.value))
-        }
-
+        const updatedUser = await store.fetchProfile()
+        user.value = updatedUser
+        
         await loadPayments()
-        paying.value = false
-    } else {
+    } catch (error) {
+        const errData = error.response?.data || {}
         Swal.fire({
             title: 'Error',
-            text: data.msg || 'Error al procesar el pago',
+            text: errData.msg || errData.error || 'Error al procesar el pago',
             icon: 'error',
             background: '#161224',
             color: '#f8f8f8',
             confirmButtonColor: '#d4af37'
         })
+    } finally {
         paying.value = false
     }
 }
 
 const generarLectura = async (tipo, silent = false) => {
     loadingData.value = true
-    const endpoint = tipo === 'principal' ? `/lecturas/principal/${user.value._id}` : `/lecturas/diaria/${user.value._id}`
-    const { ok, data } = await apiFetch(endpoint, 'POST')
-    
-    if (ok) {
+    try {
+        const response = await lecturaService.generarLectura(tipo, user.value._id)
+        const data = response.data
         if (tipo === 'principal') mainReading.value = data.lectura
         else dailyReading.value = data.lectura
-    } else {
+    } catch (error) {
         if (!silent) {
+            const errData = error.response?.data || {}
             Swal.fire({
                 title: 'Energías Bloqueadas',
-                text: data.error || data.msg || 'Error al generar lectura.',
+                text: errData.error || errData.msg || 'Error al generar lectura.',
                 icon: 'warning',
                 background: '#161224',
                 color: '#f8f8f8',
                 confirmButtonColor: '#d4af37'
             })
         }
+    } finally {
+        loadingData.value = false
     }
-    loadingData.value = false
-}
-
-const formatearFecha = (fecha) => {
-    if (!fecha) return '...'
-    const d = new Date(fecha)
-    return d.toLocaleDateString('es-ES') + ' a las ' + formatTime(fecha)
-}
-
-const formatTime = (fecha) => {
-    if (!fecha) return ''
-    return new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-}
-
-const isToday = (dateString) => {
-    if (!dateString) return false
-    const d = new Date(dateString)
-    const today = new Date()
-    return d.getDate() === today.getDate() && 
-           d.getMonth() === today.getMonth() && 
-           d.getFullYear() === today.getFullYear()
-}
-
-const extraerNumero = (texto) => {
-    if (!texto) return '?'
-    const match = texto.match(/\d+/)
-    return match ? match[0] : '?'
-}
-
-const logout = () => {
-    AuthService.logout()
-    router.push('/')
 }
 </script>
 
 <style scoped>
-.user-container { width: 95%; max-width: 1200px; margin: 2rem auto; }
-.tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; justify-content: center; }
+.user-container { width: 95%; max-width: 1200px; margin: 0 auto; }
+.tabs { display: flex; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; justify-content: center; }
 .tab-btn { background: transparent; color: var(--text-secondary); border: 1px solid transparent; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-family: var(--font-heading); font-weight: bold; transition: all var(--transition-speed); font-size: 1rem;}
 .tab-btn.active { color: var(--primary-color); background: rgba(212, 175, 55, 0.1); border-color: var(--primary-color); }
 
@@ -335,6 +290,4 @@ const logout = () => {
 .status-badge { display: inline-block; padding: 0.3em 0.8em; border-radius: 12px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
 .bg-success { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #28a745; }
 .bg-warning { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid #ffc107; }
-.number-highlight { font-size: 3rem; font-family: var(--font-heading); color: var(--primary-color); text-shadow: 0 0 10px var(--primary-glow); margin-bottom: 1rem; }
-.reading-text { white-space: pre-wrap; font-size: 1rem; color: #f0f0f0; text-align: left; }
 </style>

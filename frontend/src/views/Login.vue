@@ -1,34 +1,39 @@
 <template>
-  <main class="glass-panel" style="margin: auto; max-width: 450px; width: 90%;">
-    <h1>Portal Místico</h1>
-    <p class="text-center mb-2">Descubre los secretos de tu destino a través de los números.</p>
+  <div class="text-center" style="margin-top: 5rem;">
+    <h1 class="mb-1">Portal Místico</h1>
+    <p class="mb-2">Descubre los secretos de tu numerología</p>
     
-    <form @submit.prevent="handleLogin">
-        <div class="form-group">
-            <label for="email">Correo Electrónico</label>
-            <input type="email" id="email" v-model="email" class="form-control" autocomplete="email" required placeholder="tu@correo.com">
-        </div>
-        
-        <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input type="password" id="password" v-model="password" class="form-control" autocomplete="current-password" required placeholder="••••••••">
+    <form @submit.prevent="handleLogin" class="glass-panel" style="max-width: 400px; margin: 0 auto; padding: 2.5rem;">
+        <div class="form-group mb-1 text-left">
+            <label for="email" style="display: block; margin-bottom: 0.5rem;">Correo Electrónico</label>
+            <input type="email" id="email" v-model="email" class="form-control w-100" autocomplete="username" required placeholder="tu@correo.com" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
         </div>
 
-        <button type="submit" class="btn btn-primary mt-2" :disabled="loading">
+        <div class="form-group text-left mb-2">
+            <label for="password" style="display: block; margin-bottom: 0.5rem;">Contraseña</label>
+            <input type="password" id="password" v-model="password" class="form-control w-100" autocomplete="current-password" required placeholder="••••••••" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-2" :disabled="loading" style="width: 100%;">
             {{ loading ? 'Conectando con los astros...' : 'Ingresar al Portal' }}
         </button>
-    </form>
 
-    <router-link to="/register" class="auth-link">¿No tienes cuenta? Regístrate aquí y revela tu camino.</router-link>
-  </main>
+        <p style="margin-top: 1.5rem; font-size: 0.9rem;">
+            ¿No tienes cuenta? 
+            <router-link to="/register" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">Regístrate aquí</router-link>
+        </p>
+    </form>
+  </div>
 </template>
 
 <script setup>
 import Swal from 'sweetalert2'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { AuthService } from '../api'
+import authService from '../services/authService'
+import { useGeneralStore } from '../store/General'
 
+const store = useGeneralStore()
 const router = useRouter()
 const email = ref('')
 const password = ref('')
@@ -36,53 +41,32 @@ const loading = ref(false)
 
 const handleLogin = async () => {
     if (!email.value || !password.value) return
-    
     loading.value = true
 
-    const { ok, data } = await AuthService.login(email.value, password.value)
-
-    if (ok && data.token && data.usuario) {
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.usuario))
-        
-        if (data.usuario.rol === 'admin') {
-            router.push('/dashboard-admin')
-        } else {
-            router.push('/dashboard-user')
+    try {
+        const response = await authService.login(email.value, password.value)
+        const data = response.data
+        if (data.token && data.usuario) {
+            store.setUser(data.usuario, data.token)
+            
+            if (data.usuario.rol === 'admin') {
+                router.push('/admin')
+            } else {
+                router.push('/dashboard-user')
+            }
         }
-    } else {
+    } catch (error) {
+        const errData = error.response?.data || {}
         Swal.fire({
             title: 'Desconexión',
-            text: data.error || data.msg || 'Credenciales incorrectas.',
+            text: errData.error || errData.msg || 'Credenciales incorrectas.',
             icon: 'error',
             background: '#161224',
             color: '#f8f8f8',
             confirmButtonColor: '#d4af37'
         })
+    } finally {
         loading.value = false
     }
 }
 </script>
-
-<style scoped>
-.form-group {
-    margin-bottom: 1.5rem;
-}
-.form-control {
-    width: 100%;
-    padding: 0.8rem 1.2rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    transition: all var(--transition-speed);
-}
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
-    background: rgba(0, 0, 0, 0.4);
-}
-</style>

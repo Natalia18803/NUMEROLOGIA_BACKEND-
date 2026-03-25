@@ -1,73 +1,79 @@
 <template>
-  <main class="glass-panel" style="margin: auto; max-width: 500px; width: 90%; margin-top: 2rem; margin-bottom: 2rem;">
-    <h1 style="font-size: 2rem;">Inicia Tu Viaje</h1>
-    <p class="text-center mb-2">Los números de tu fecha de nacimiento revelarán tu verdadero potencial.</p>
+  <div class="text-center" style="margin-top: 3rem;">
+    <h1 class="mb-1">Comienza tu Viaje</h1>
+    <p class="mb-2">Ingresa tus datos celestiales</p>
     
-    <form @submit.prevent="handleRegister">
-        <div class="form-group">
-            <label for="nombre">Nombre Completo</label>
-            <input type="text" id="nombre" v-model="form.nombre" class="form-control" autocomplete="name" required placeholder="Tus nombres y apellidos">
+    <form @submit.prevent="handleRegister" class="glass-panel" style="max-width: 450px; margin: 0 auto; padding: 2.5rem; text-align: left;">
+        <div class="form-group mb-1">
+            <label for="nombre" style="display: block; margin-bottom: 0.5rem;">Nombre Completo</label>
+            <input type="text" id="nombre" v-model="form.nombre" class="form-control" autocomplete="name" required placeholder="Tu Nombre Astral" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
         </div>
 
-        <div class="form-group">
-            <label for="email">Correo Electrónico</label>
-            <input type="email" id="email" v-model="form.email" class="form-control" autocomplete="email" required placeholder="tu@correo.com">
-        </div>
-        
-        <div class="form-group">
-            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-            <input type="date" id="fecha_nacimiento" v-model="form.fecha_nacimiento" class="form-control" required>
+        <div class="form-group mb-1">
+            <label for="email" style="display: block; margin-bottom: 0.5rem;">Correo Electrónico</label>
+            <input type="email" id="email" v-model="form.email" class="form-control" autocomplete="email" required placeholder="tu@cosmos.com" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
         </div>
 
-        <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input type="password" id="password" v-model="form.password" class="form-control" autocomplete="new-password" required placeholder="••••••••" minlength="6">
+        <div class="form-group mb-1">
+            <label for="fecha" style="display: block; margin-bottom: 0.5rem;">Fecha de Nacimiento</label>
+            <input type="date" id="fecha" v-model="form.fecha_nacimiento" class="form-control" required style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
         </div>
 
-        <button type="submit" class="btn btn-primary mt-2" :disabled="loading">
+        <div class="form-group mb-2">
+            <label for="password" style="display: block; margin-bottom: 0.5rem;">Contraseña</label>
+            <input type="password" id="password" v-model="form.password" class="form-control" autocomplete="new-password" required placeholder="••••••••" minlength="6" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--primary-color); background: rgba(0,0,0,0.5); color: #fff;">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-2" :disabled="loading" style="width: 100%;">
             {{ loading ? 'Calculando tus números...' : 'Revelar mi Destino' }}
         </button>
-    </form>
 
-    <router-link to="/" class="auth-link">¿Ya tienes cuenta? Ingresa aquí.</router-link>
-  </main>
+        <p class="text-center" style="margin-top: 1.5rem; font-size: 0.9rem;">
+            ¿Ya perteneces a la matriz? 
+            <router-link to="/" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">Inicia sesión</router-link>
+        </p>
+    </form>
+  </div>
 </template>
 
 <script setup>
 import Swal from 'sweetalert2'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { AuthService } from '../api'
+import authService from '../services/authService'
+import { useGeneralStore } from '../store/General'
 
+const store = useGeneralStore()
 const router = useRouter()
 const form = reactive({ nombre: '', email: '', fecha_nacimiento: '', password: '' })
 const loading = ref(false)
 
 const handleRegister = async () => {
     if (!form.nombre || !form.email || !form.fecha_nacimiento || !form.password) return
-    
     loading.value = true
 
-    const { ok, data } = await AuthService.register(form.nombre, form.email, form.password, form.fecha_nacimiento)
-
-    if (ok && data.token && data.usuario) {
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.usuario))
-        
-        Swal.fire({
-            title: '¡Destino Revelado!',
-            text: 'Tu cuenta ha sido creada exitosamente.',
-            icon: 'success',
-            background: '#161224',
-            color: '#f8f8f8',
-            confirmButtonColor: '#d4af37'
-        }).then(() => {
-            router.push('/dashboard-user')
-        })
-    } else {
-        let msg = data.msg || 'Error al completar el registro.'
-        if (data.errors && data.errors.length > 0) msg = data.errors[0].msg
-        if (data.error) msg = data.error
+    try {
+        const response = await authService.register(form.nombre, form.email, form.password, form.fecha_nacimiento)
+        const data = response.data
+        if (data.token && data.usuario) {
+            store.setUser(data.usuario, data.token)
+            
+            Swal.fire({
+                title: '¡Destino Revelado!',
+                text: 'Tu cuenta ha sido creada exitosamente.',
+                icon: 'success',
+                background: '#161224',
+                color: '#f8f8f8',
+                confirmButtonColor: '#d4af37'
+            }).then(() => {
+                router.push('/dashboard-user')
+            })
+        }
+    } catch (error) {
+        const errData = error.response?.data || {}
+        let msg = errData.msg || 'Error al completar el registro.'
+        if (errData.errors && errData.errors.length > 0) msg = errData.errors[0].msg
+        if (errData.error) msg = errData.error
 
         Swal.fire({
             title: 'Sincronización Fallida',
@@ -77,39 +83,8 @@ const handleRegister = async () => {
             color: '#f8f8f8',
             confirmButtonColor: '#d4af37'
         })
+    } finally {
         loading.value = false
     }
 }
 </script>
-
-<style scoped>
-.form-group {
-    margin-bottom: 1.5rem;
-    position: relative;
-}
-.form-group label {
-    display: block;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-}
-.form-control {
-    width: 100%;
-    padding: 0.8rem 1.2rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    transition: all var(--transition-speed);
-}
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
-    background: rgba(0, 0, 0, 0.4);
-}
-</style>

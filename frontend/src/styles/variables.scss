@@ -1,0 +1,25 @@
+$primary-color: #d4af37;
+$primary-glow: rgba(212, 175, 55, 0.4);
+$bg-color-1: #0A0A10;
+$bg-color-2: #161224;
+$text-primary: #f8f8f8;
+$text-secondary: #a39cb6;
+$glass-bg: rgba(30, 25, 45, 0.6);
+$glass-border: rgba(212, 175, 55, 0.2);
+$font-heading: 'Cinzel', serif;
+$font-body: 'Inter', sans-serif;
+$transition-speed: 0.3s;
+
+:root {
+  --primary-color: #{$primary-color};
+  --primary-glow: #{$primary-glow};
+  --bg-color-1: #{$bg-color-1};
+  --bg-color-2: #{$bg-color-2};
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --glass-bg: #{$glass-bg};
+  --glass-border: #{$glass-border};
+  --font-heading: #{$font-heading};
+  --font-body: #{$font-body};
+  --transition-speed: #{$transition-speed};
+}

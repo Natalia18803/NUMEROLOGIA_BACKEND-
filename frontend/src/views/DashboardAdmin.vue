@@ -1,241 +1,208 @@
 <template>
-  <div>
-    <header style="padding: 1rem 2rem; background: rgba(10, 10, 16, 0.8); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border);">
-        <h2 style="margin:0; font-size:1.5rem;">Panel Administrativo</h2>
-        <div>
-            <span style="margin-right: 1.5rem; color: var(--text-secondary);">Admin</span>
-            <button @click="logout" class="btn btn-outline" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cerrar Sesión</button>
-        </div>
-    </header>
-
-    <div class="admin-container">
-        <div class="tabs">
-            <button :class="['tab-btn', currentTab === 'users' ? 'active' : '']" @click="currentTab = 'users'">Usuarios</button>
-            <button :class="['tab-btn', currentTab === 'payments' ? 'active' : '']" @click="currentTab = 'payments'">Pagos</button>
-            <button :class="['tab-btn', currentTab === 'readings' ? 'active' : '']" @click="currentTab = 'readings'">Lecturas</button>
+  <div class="admin-container">
+    <div class="glass-panel">
+        <div class="dashboard-header mb-2">
+            <h3><i class="fas fa-users"></i> Gestión de Usuarios</h3>
+            <div class="stats-badge">Total: {{ users.length }}</div>
         </div>
 
-        <div v-show="currentTab === 'users'">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="!users.length"><td colspan="5" class="text-center">Cargando o sin usuarios...</td></tr>
-                    <tr v-for="u in users" :key="u._id">
-                        <td>{{ u.nombre }}</td>
-                        <td>{{ u.email }}</td>
-                        <td>{{ u.rol }}</td>
-                        <td :class="['badge-' + u.estado]">{{ u.estado.toUpperCase() }}</td>
-                        <td>
-                            <button class="action-btn" @click="toggleStatus(u)">Cambiar Estado</button>
-                            <button class="action-btn delete" @click="deleteUser(u._id)">Eliminar</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div v-if="loading" class="text-center" style="padding: 3rem;">
+            <div class="loading-spinner" style="color: var(--primary-color);">Accediendo a la base de datos...</div>
         </div>
-
-        <div v-show="currentTab === 'payments'">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID Pago</th>
-                        <th>Usuario</th>
-                        <th>Monto</th>
-                        <th>Método</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="!payments.length"><td colspan="5" class="text-center">Cargando o sin pagos...</td></tr>
-                    <tr v-for="p in payments" :key="p._id">
-                        <td style="font-size:0.8rem;">{{ p._id }}</td>
-                        <td>{{ p.usuario_id?.nombre || 'Desconocido' }}</td>
-                        <td>${{ p.monto }}</td>
-                        <td style="text-transform:capitalize;">{{ p.metodo }}</td>
-                        <td>{{ new Date(p.fecha).toLocaleDateString() }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div v-show="currentTab === 'readings'">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Módulo/Nº</th>
-                        <th>Usuario</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="!readings.length"><td colspan="4" class="text-center">Cargando o sin lecturas...</td></tr>
-                    <tr v-for="l in readings" :key="l._id">
-                        <td style="text-transform:capitalize;">{{ l.tipo }}</td>
-                        <td>Nº {{ l.numero_calculado }}</td>
-                        <td>{{ l.usuario_id?.nombre || 'Desconocido' }}</td>
-                        <td>{{ new Date(l.fecha_generacion).toLocaleDateString() }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        
+        <table v-else class="data-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Registro</th>
+                    <th>Estado</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-if="!users.length">
+                    <td colspan="6" class="text-center">No hay usuarios en la matriz.</td>
+                </tr>
+                <tr v-for="u in users" :key="u._id">
+                    <td style="font-weight: bold;">{{ u.nombre }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ formatearFecha(u.fecha_registro) }}</td>
+                    <td>
+                        <span :class="['status-badge', u.estado === 'activo' ? 'bg-success' : 'bg-warning']">
+                            {{ u.estado }}
+                        </span>
+                    </td>
+                    <td>{{ u.rol }}</td>
+                    <td>
+                        <div v-if="u.rol !== 'admin'" class="action-buttons">
+                            <button @click="toggleStatus(u)" :class="['btn-action', u.estado === 'activo' ? 'btn-warning' : 'btn-success']" :title="u.estado === 'activo' ? 'Desactivar Cuenta' : 'Activar Cuenta'">
+                                <i :class="u.estado === 'activo' ? 'fas fa-ban' : 'fas fa-check'"></i>
+                            </button>
+                            <button @click="deleteUser(u._id)" class="btn-action btn-danger" title="Eliminar Usuario">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <span v-else style="color: gray; font-size: 0.8rem; font-style: italic;">Sin acciones</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
   </div>
 </template>
 
 <script setup>
 import Swal from 'sweetalert2'
-import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { AuthService, apiFetch } from '../api'
-
-const router = useRouter()
-const currentTab = ref('users')
+import { ref, onMounted } from 'vue'
+import { formatearFecha } from '../utils/formatDate'
+import userService from '../services/userService'
 
 const users = ref([])
-const payments = ref([])
-const readings = ref([])
+const loading = ref(true)
 
-onMounted(async () => {
-    // We should also ensure the admin has a valid profile session
-    const { ok, data } = await apiFetch('/auth/perfil')
-    if (!ok) {
-        AuthService.logout()
-        router.push('/')
-        return
-    }
-    const user = data.usuario || data
-    if (user.rol !== 'admin') {
-        router.push('/dashboard-user')
-        return
-    }
-    loadData('users')
-})
-
-watch(currentTab, (newTab) => {
-    loadData(newTab)
-})
-
-const loadData = async (tab) => {
-    if (tab === 'users' && !users.value.length) {
-        const { ok, data } = await apiFetch('/usuarios/todos')
-        if (ok) users.value = data.usuarios
-    } else if (tab === 'payments' && !payments.value.length) {
-        const { ok, data } = await apiFetch('/pagos')
-        if (ok) payments.value = data.pagos
-    } else if (tab === 'readings' && !readings.value.length) {
-        const { ok, data } = await apiFetch('/lecturas')
-        if (ok) readings.value = data.lecturas
+const loadUsers = async () => {
+    loading.value = true
+    try {
+        const response = await userService.getAllUsuarios()
+        // El array viene expuesto directamente
+        users.value = Array.isArray(response.data.usuarios) ? response.data.usuarios : response.data
+    } catch (e) {
+        Swal.fire({
+            title: 'Fallo de Conexión',
+            text: 'No se pudo cargar la base de datos estelar.',
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
+    } finally {
+        loading.value = false
     }
 }
 
-const toggleStatus = async (userObj) => {
-    const newState = userObj.estado === 'activo' ? 'inactivo' : 'activo'
-    
-    const result = await Swal.fire({
-        title: `¿Cambiar a ${newState.toUpperCase()}?`,
-        text: `El usuario ${userObj.nombre} cambiará de estado.`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#d4af37',
-        cancelButtonColor: '#ff4d4d',
-        confirmButtonText: 'Sí, cambiar',
-        cancelButtonText: 'Cancelar',
-        background: '#161224',
-        color: '#f8f8f8'
-    })
-
-    if (result.isConfirmed) {
-        const { ok } = await apiFetch(`/usuarios/${userObj._id}/estado`, 'PATCH', { estado: newState })
-        if (ok) {
-            userObj.estado = newState
-            Swal.fire({
-                title: 'Actualizado',
-                text: 'El estado del usuario ha cambiado.',
-                icon: 'success',
-                background: '#161224',
-                color: '#f8f8f8',
-                confirmButtonColor: '#d4af37'
-            })
-        } else {
-            Swal.fire({
-                title: 'Error',
-                text: 'No se pudo cambiar el estado.',
-                icon: 'error',
-                background: '#161224',
-                color: '#f8f8f8'
-            })
-        }
+const toggleStatus = async (user) => {
+    try {
+        await userService.updateEstado(user)
+        await loadUsers()
+        Swal.fire({
+            title: 'Actualizado',
+            text: `El estado de ${user.nombre} ahora es ${user.estado === 'activo' ? 'inactivo' : 'activo'}`,
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            background: '#161224',
+            color: '#f8f8f8'
+        })
+    } catch (error) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Hubo un error al actualizar el estado.',
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
     }
 }
 
 const deleteUser = async (id) => {
     const result = await Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Esta acción eliminará permanentemente al usuario.',
+        title: '¿Estás completamente seguro?',
+        text: "Esta entidad será borrada de la base de datos permanentemente.",
         icon: 'warning',
         showCancelButton: true,
+        background: '#161224',
+        color: '#f8f8f8',
         confirmButtonColor: '#ff4d4d',
         cancelButtonColor: '#a39cb6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        background: '#161224',
-        color: '#f8f8f8'
+        confirmButtonText: 'Sí, purgar registro',
+        cancelButtonText: 'Cancelar'
     })
 
     if (result.isConfirmed) {
-        const { ok } = await apiFetch(`/usuarios/${id}`, 'DELETE')
-        if (ok) {
-            users.value = users.value.filter(u => u._id !== id)
+        try {
+            await userService.deleteUsuario(id)
+            await loadUsers()
             Swal.fire({
-                title: 'Eliminado',
-                text: 'El usuario ha sido borrado de la matriz.',
+                title: 'Purgado',
+                text: 'El usuario ha sido eliminado.',
                 icon: 'success',
                 background: '#161224',
                 color: '#f8f8f8',
                 confirmButtonColor: '#d4af37'
             })
-        } else {
+        } catch (error) {
             Swal.fire({
                 title: 'Error',
-                text: 'Error al eliminar el usuario.',
+                text: 'El registro no pudo ser purgado.',
                 icon: 'error',
                 background: '#161224',
-                color: '#f8f8f8'
+                color: '#f8f8f8',
+                confirmButtonColor: '#d4af37'
             })
         }
     }
 }
 
-const logout = () => {
-    AuthService.logout()
-    router.push('/')
-}
+onMounted(() => {
+    loadUsers()
+})
 </script>
 
 <style scoped>
-.admin-container { width: 95%; max-width: 1200px; margin: 2rem auto; }
-.tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; }
-.tab-btn { background: transparent; color: var(--text-secondary); border: 1px solid transparent; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-family: var(--font-heading); font-weight: bold; transition: all var(--transition-speed); }
-.tab-btn.active { color: var(--primary-color); background: rgba(212, 175, 55, 0.1); border-color: var(--primary-color); }
-
-.data-table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.admin-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 1rem;
+}
+.stats-badge {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.data-table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.3); border-radius: 12px; overflow: hidden; }
 .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.data-table th { background: rgba(0,0,0,0.4); color: var(--primary-color); font-family: var(--font-heading); font-size: 0.9rem; letter-spacing: 1px; }
-.data-table tr:hover { background: rgba(255,255,255,0.02); }
+.data-table th { background: rgba(0,0,0,0.6); color: var(--primary-color); font-family: var(--font-heading); font-size: 0.9rem; letter-spacing: 1px; }
 
-.action-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; margin-right: 0.5rem; font-size: 0.8rem; text-decoration: underline; }
-.action-btn:hover { color: var(--text-primary); }
-.action-btn.delete { color: #ff4d4d; }
+.status-badge { display: inline-block; padding: 0.3em 0.8em; border-radius: 12px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
+.bg-success { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #28a745; }
+.bg-warning { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid #ffc107; }
 
-.badge-activo { color: #28a745; font-weight: bold; }
-.badge-inactivo { color: #ffc107; font-weight: bold; }
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+.btn-action {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #fff;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.btn-warning { border-color: #ffc107; color: #ffc107; }
+.btn-warning:hover { background: #ffc107; color: #000; }
+.btn-success { border-color: #28a745; color: #28a745; }
+.btn-success:hover { background: #28a745; color: #fff; }
+.btn-danger { border-color: #ff4d4d; color: #ff4d4d; }
+.btn-danger:hover { background: #ff4d4d; color: #fff; }
 </style>
