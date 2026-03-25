@@ -18,8 +18,4 @@ npm run dev
 ```
 Accede a http://localhost:3000 - Debería mostrar "API de Numerologia funcionando".
 
-<<<<<<< HEAD
 **¡Backend fix completado!** 🚀
-=======
-**¡Backend fix completado!** 🚀.....
->>>>>>> c6af92142aa683254b4a2af7bea68ab9c93c1149
