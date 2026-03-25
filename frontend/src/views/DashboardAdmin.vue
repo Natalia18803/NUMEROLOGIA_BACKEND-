@@ -37,7 +37,11 @@
                     <label>Contraseña</label>
                     <input type="password" v-model="newUser.password" required minlength="6" class="form-control" placeholder="Mínimo 6 caracteres">
                 </div>
-                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Fecha de Nacimiento celestial (Requerido para Lecturas)</label>
+                    <input type="date" v-model="newUser.fecha_nacimiento" required class="form-control">
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; grid-column: 1 / -1;">
                     <div>
                         <label>Rol</label>
                         <select v-model="newUser.rol" class="form-control">
@@ -92,7 +96,7 @@
                     <td>{{ u.rol }}</td>
                     <td>
                         <div v-if="u.email !== store.user.email" class="action-buttons">
-                            <button @click="toggleStatus(u)" :class="['btn-action', u.estado === 'activo' ? 'btn-warning' : 'btn-success']" :title="u.estado === 'activo' ? 'Desactivar Cuenta' : 'Activar Cuenta'">
+                            <button @click="toggleStatus(u)" :class="['btn-action', u.estado === 'activo' ? 'btn-warning' : 'btn-success']" title="Cambiar Estado">
                                 <i :class="u.estado === 'activo' ? 'fas fa-ban' : 'fas fa-check'"></i>
                             </button>
                             <button @click="deleteUser(u._id)" class="btn-action btn-danger" title="Eliminar Usuario">
@@ -160,7 +164,7 @@ const users = ref([])
 const loadingUsers = ref(true)
 const showUserForm = ref(false)
 const creating = ref(false)
-const newUser = reactive({ nombre: '', email: '', password: '', rol: 'usuario', estado: 'inactivo' })
+const newUser = reactive({ nombre: '', email: '', fecha_nacimiento: '', password: '', rol: 'usuario', estado: 'inactivo' })
 
 // Pagos State
 const payments = ref([])
@@ -212,6 +216,7 @@ const handleCreateUser = async () => {
         // Limpiar
         newUser.nombre = ''
         newUser.email = ''
+        newUser.fecha_nacimiento = ''
         newUser.password = ''
         newUser.rol = 'usuario'
         newUser.estado = 'inactivo'
