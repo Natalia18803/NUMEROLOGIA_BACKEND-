@@ -87,8 +87,8 @@
                                 <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(mainReading.fecha_lectura) }}</p>
                             </div>
                             <div v-else>
-                                <p style="margin-bottom:1rem; font-size:0.9rem;">Tu destino está oculto.</p>
-                                <button @click="generarLectura('principal')" class="btn btn-primary" style="width: auto;" :disabled="loadingData">Revelar Número Principal</button>
+                                <p style="margin-bottom:1rem; font-size:0.9rem;">El Universo está calculando tu destino...</p>
+                                <div class="loading-spinner" style="color: var(--primary-color);">Cargando...</div>
                             </div>
                         </div>
                     </div>
@@ -165,6 +165,11 @@ const loadReadings = async () => {
     if (ok && data.lecturas) {
         mainReading.value = data.lecturas.find(l => l.tipo === 'principal') || null
         dailyReading.value = data.lecturas.find(l => l.tipo === 'diaria') || null
+        
+        // Auto-Generate main reading if it doesn't exist
+        if (!mainReading.value) {
+            await generarLectura('principal', true)
+        }
     }
 }
 
@@ -221,7 +226,7 @@ const simularPago = async () => {
     }
 }
 
-const generarLectura = async (tipo) => {
+const generarLectura = async (tipo, silent = false) => {
     loadingData.value = true
     const endpoint = tipo === 'principal' ? `/lecturas/principal/${user.value._id}` : `/lecturas/diaria/${user.value._id}`
     const { ok, data } = await apiFetch(endpoint, 'POST')
@@ -230,14 +235,16 @@ const generarLectura = async (tipo) => {
         if (tipo === 'principal') mainReading.value = data.lectura
         else dailyReading.value = data.lectura
     } else {
-        Swal.fire({
-            title: 'Energías Bloqueadas',
-            text: data.error || data.msg || 'Error al generar lectura.',
-            icon: 'warning',
-            background: '#161224',
-            color: '#f8f8f8',
-            confirmButtonColor: '#d4af37'
-        })
+        if (!silent) {
+            Swal.fire({
+                title: 'Energías Bloqueadas',
+                text: data.error || data.msg || 'Error al generar lectura.',
+                icon: 'warning',
+                background: '#161224',
+                color: '#f8f8f8',
+                confirmButtonColor: '#d4af37'
+            })
+        }
     }
     loadingData.value = false
 }
