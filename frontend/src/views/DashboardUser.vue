@@ -8,9 +8,15 @@
     <div class="user-container">
         <!-- Tabs -->
         <div class="tabs">
-            <button :class="['tab-btn', currentTab === 'perfil' ? 'active' : '']" @click="currentTab = 'perfil'">Mi Perfil</button>
-            <button :class="['tab-btn', currentTab === 'pagos' ? 'active' : '']" @click="currentTab = 'pagos'">Pagos y Suscripción</button>
-            <button :class="['tab-btn', currentTab === 'lecturas' ? 'active' : '']" @click="currentTab = 'lecturas'">Mis Lecturas</button>
+            <button v-if="user.estado === 'activo'" :class="['tab-btn', currentTab === 'lecturas' ? 'active' : '']" @click="currentTab = 'lecturas'">
+                <i class="fas fa-star"></i> Revelaciones
+            </button>
+            <button :class="['tab-btn', currentTab === 'perfil' ? 'active' : '']" @click="currentTab = 'perfil'">
+                <i class="fas fa-user"></i> Mi Perfil
+            </button>
+            <button :class="['tab-btn', currentTab === 'pagos' ? 'active' : '']" @click="currentTab = 'pagos'">
+                <i class="fas fa-wallet"></i> Suscripción
+            </button>
         </div>
 
         <!-- Perfil Tab -->
@@ -66,49 +72,46 @@
             </table>
         </div>
 
-        <!-- Lecturas Tab -->
-        <div v-show="currentTab === 'lecturas'" class="glass-panel" style="max-width: 900px; margin: auto;">
-            <div v-if="user.estado === 'inactivo'" class="text-center" style="padding: 2rem 0;">
-                <h3 style="color:var(--text-secondary);">El Portal Está Cerrado</h3>
-                <p>Las energías de los números están esperando por ti. Completa el pago de tu suscripción para revelar tus lecturas.</p>
-                <button @click="currentTab = 'pagos'" class="btn btn-outline mt-2" style="width: auto;">Ir a Pagos</button>
+        <!-- Lecturas Tab (Inicio) -->
+        <div v-show="currentTab === 'lecturas'" class="fade-in">
+            <div v-if="user.estado === 'inactivo'" class="glass-panel text-center" style="max-width: 600px; margin: auto; padding: 4rem 2rem;">
+                <h2 style="color:var(--primary-color); font-size: 2rem; margin-bottom: 1rem;">Portal Bloqueado</h2>
+                <p>Las energías celestiales están esperando. Completa tu activación para revelar tu destino astrológico.</p>
+                <button @click="currentTab = 'pagos'" class="btn btn-primary mt-2" style="padding: 1rem 3rem; font-size: 1.1rem;">Desbloquear Portal</button>
             </div>
 
             <div v-else>
-                <h3 class="text-center">Tus Lecturas Numerológicas</h3>
-                
-                <div class="reading-grid">
-                    <div class="reading-card">
-                        <h4 class="text-center">Mi Número Principal</h4>
-                        <div class="text-center" style="margin-top: 1.5rem;">
-                            <div v-if="mainReading">
-                                <div class="number-highlight">Nº {{ extraerNumero(mainReading.contenido) }}</div>
-                                <div class="reading-text">{{ mainReading.contenido }}</div>
-                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(mainReading.fecha_lectura) }}</p>
-                            </div>
-                            <div v-else>
-                                <p style="margin-bottom:1rem; font-size:0.9rem;">El Universo está calculando tu destino...</p>
-                                <div class="loading-spinner" style="color: var(--primary-color);">Cargando...</div>
+                <!-- Hero Section for Daily Reading -->
+                <div class="daily-hero-card">
+                    <div class="hero-content">
+                        <h2 class="hero-title">Tu Lectura de Hoy</h2>
+                        <div v-if="dailyReading">
+                            <div class="daily-highlight">✨ {{ extraerNumero(dailyReading.contenido) }} ✨</div>
+                            <p class="hero-text">{{ dailyReading.contenido }}</p>
+                            <p class="hero-date">Alineación calculada el: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
+                            
+                            <div v-if="!isToday(dailyReading.fecha_lectura)" style="margin-top: 2rem;">
+                                <button @click="generarLectura('diaria')" class="btn btn-primary" :disabled="loadingData">Conectar con el Universo de Hoy</button>
                             </div>
                         </div>
+                        <div v-else>
+                            <p class="hero-text" style="color: rgba(255,255,255,0.7);">Las constelaciones tienen un mensaje para ti hoy.</p>
+                            <button @click="generarLectura('diaria')" class="btn btn-primary" :disabled="loadingData" style="margin-top: 1rem;">Conectar con el Universo de Hoy</button>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="reading-card">
-                        <h4 class="text-center">Lectura Diaria (24 horas)</h4>
-                        <div class="text-center" style="margin-top: 1.5rem;">
-                            <div v-if="dailyReading">
-                                <div class="number-highlight" style="font-size: 2.2rem; margin-bottom: 0.5rem;">✨ {{ extraerNumero(dailyReading.contenido) }} ✨</div>
-                                <div class="reading-text">{{ dailyReading.contenido }}</div>
-                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Última: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
-                                
-                                <div v-if="!isToday(dailyReading.fecha_lectura)" style="margin-top: 1.5rem;">
-                                    <button @click="generarLectura('diaria')" class="btn btn-outline" style="width: auto;" :disabled="loadingData">Generar Lectura de Hoy</button>
-                                </div>
-                            </div>
-                            <div v-else>
-                                <p style="margin-bottom:1rem; font-size:0.9rem;">Las constelaciones tienen un mensaje para ti hoy.</p>
-                                <button @click="generarLectura('diaria')" class="btn btn-outline" style="width: auto;" :disabled="loadingData">Generar Lectura de Hoy</button>
-                            </div>
+                <!-- Secondary Section: Main Reading -->
+                <div class="main-reading-card" style="margin-top: 2rem;">
+                    <div class="glass-panel text-center" style="max-width: 800px; margin: auto; border-top: 4px solid var(--primary-color);">
+                        <h3 style="margin-bottom: 1rem; color: #fff;">Tu Número Espiritual</h3>
+                        <div v-if="mainReading">
+                            <div class="number-highlight" style="font-size: 3.5rem; margin-bottom: 1rem;">Nº {{ extraerNumero(mainReading.contenido) }}</div>
+                            <p class="reading-text" style="font-size: 1.1rem; line-height: 1.6;">{{ mainReading.contenido }}</p>
+                        </div>
+                        <div v-else>
+                            <p style="margin-bottom:1rem; font-size:1.1rem;">El Universo está calculando tu número de vida...</p>
+                            <div class="loading-spinner" style="color: var(--primary-color);">Cargando vibraciones...</div>
                         </div>
                     </div>
                 </div>
@@ -143,14 +146,17 @@ onMounted(async () => {
         router.push('/')
         return
     }
-    // Fix: Backend `getPerfil` returns the user directly, unlike login that wraps it in `usuario`.
+    // Fix: Backend `getPerfil` returns the user directly
     user.value = data.usuario || data
     localStorage.setItem('user', JSON.stringify(user.value))
 
-    // Pre-load logic if active
+    // If active, immediately show readings
     if (user.value.estado === 'activo') {
+        currentTab.value = 'lecturas'
         loadReadings()
         loadPayments()
+    } else {
+        currentTab.value = 'perfil'
     }
 })
 
@@ -166,9 +172,13 @@ watch(currentTab, (newTab) => {
 const loadReadings = async () => {
     if (!user.value._id) return
     const { ok, data } = await apiFetch(`/lecturas/usuario/${user.value._id}`)
-    if (ok && data.lecturas) {
-        mainReading.value = data.lecturas.find(l => l.tipo === 'principal') || null
-        dailyReading.value = data.lecturas.find(l => l.tipo === 'diaria') || null
+    
+    // Fix: 'data' is already the array [ { lectura1 }, { lectura2 } ]
+    const lecturasArray = Array.isArray(data) ? data : (data.lecturas || [])
+    
+    if (ok && lecturasArray.length >= 0) {
+        mainReading.value = lecturasArray.find(l => l.tipo === 'principal') || null
+        dailyReading.value = lecturasArray.find(l => l.tipo === 'diaria') || null
         
         // Auto-Generate main reading if it doesn't exist
         if (!mainReading.value) {
@@ -291,21 +301,32 @@ const logout = () => {
 .tab-btn { background: transparent; color: var(--text-secondary); border: 1px solid transparent; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-family: var(--font-heading); font-weight: bold; transition: all var(--transition-speed); font-size: 1rem;}
 .tab-btn.active { color: var(--primary-color); background: rgba(212, 175, 55, 0.1); border-color: var(--primary-color); }
 
-.reading-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    margin-top: 2rem;
+.fade-in { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hero Styling */
+.daily-hero-card {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(10, 10, 16, 0.8) 100%);
+    border: 1px solid var(--primary-color);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(212, 175, 55, 0.1);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
 }
-@media (max-width: 768px) {
-    .reading-grid { grid-template-columns: 1fr; }
+.daily-hero-card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 60%);
+    z-index: 0; pointer-events: none;
 }
-.reading-card {
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 2rem;
-}
+.hero-content { position: relative; z-index: 1; }
+.hero-title { font-family: var(--font-heading); color: #fff; font-size: 1.5rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1.5rem; }
+.hero-text { font-size: 1.25rem; line-height: 1.8; color: #f0f0f0; max-width: 800px; margin: 0 auto; white-space: pre-wrap; }
+.daily-highlight { font-size: 4rem; color: var(--primary-color); text-shadow: 0 0 20px var(--primary-glow); margin: 1rem 0; font-family: var(--font-heading); }
+.hero-date { margin-top: 1.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.5); font-style: italic; }
+
+.main-reading-card p { color: #e0e0e0; }
 
 .data-table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.2); border-radius: 12px; overflow: hidden; }
 .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
