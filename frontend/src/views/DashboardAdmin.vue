@@ -92,6 +92,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2'
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuthService, apiFetch } from '../api'
@@ -103,7 +104,19 @@ const users = ref([])
 const payments = ref([])
 const readings = ref([])
 
-onMounted(() => {
+onMounted(async () => {
+    // We should also ensure the admin has a valid profile session
+    const { ok, data } = await apiFetch('/auth/perfil')
+    if (!ok) {
+        AuthService.logout()
+        router.push('/')
+        return
+    }
+    const user = data.usuario || data
+    if (user.rol !== 'admin') {
+        router.push('/dashboard-user')
+        return
+    }
     loadData('users')
 })
 
@@ -126,23 +139,78 @@ const loadData = async (tab) => {
 
 const toggleStatus = async (userObj) => {
     const newState = userObj.estado === 'activo' ? 'inactivo' : 'activo'
-    if(confirm(`¿Deseas cambiar el estado a ${newState.toUpperCase()}?`)) {
+    
+    const result = await Swal.fire({
+        title: `¿Cambiar a ${newState.toUpperCase()}?`,
+        text: `El usuario ${userObj.nombre} cambiará de estado.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d4af37',
+        cancelButtonColor: '#ff4d4d',
+        confirmButtonText: 'Sí, cambiar',
+        cancelButtonText: 'Cancelar',
+        background: '#161224',
+        color: '#f8f8f8'
+    })
+
+    if (result.isConfirmed) {
         const { ok } = await apiFetch(`/usuarios/${userObj._id}/estado`, 'PATCH', { estado: newState })
         if (ok) {
             userObj.estado = newState
+            Swal.fire({
+                title: 'Actualizado',
+                text: 'El estado del usuario ha cambiado.',
+                icon: 'success',
+                background: '#161224',
+                color: '#f8f8f8',
+                confirmButtonColor: '#d4af37'
+            })
         } else {
-            alert('Error al cambiar el estado.')
+            Swal.fire({
+                title: 'Error',
+                text: 'No se pudo cambiar el estado.',
+                icon: 'error',
+                background: '#161224',
+                color: '#f8f8f8'
+            })
         }
     }
 }
 
 const deleteUser = async (id) => {
-    if(confirm('¿Estás seguro de eliminar este usuario permanentemente?')) {
+    const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Esta acción eliminará permanentemente al usuario.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff4d4d',
+        cancelButtonColor: '#a39cb6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        background: '#161224',
+        color: '#f8f8f8'
+    })
+
+    if (result.isConfirmed) {
         const { ok } = await apiFetch(`/usuarios/${id}`, 'DELETE')
         if (ok) {
             users.value = users.value.filter(u => u._id !== id)
+            Swal.fire({
+                title: 'Eliminado',
+                text: 'El usuario ha sido borrado de la matriz.',
+                icon: 'success',
+                background: '#161224',
+                color: '#f8f8f8',
+                confirmButtonColor: '#d4af37'
+            })
         } else {
-            alert('Error al eliminar el usuario.')
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al eliminar el usuario.',
+                icon: 'error',
+                background: '#161224',
+                color: '#f8f8f8'
+            })
         }
     }
 }

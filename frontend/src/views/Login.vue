@@ -14,8 +14,6 @@
             <input type="password" id="password" v-model="password" class="form-control" autocomplete="current-password" required placeholder="••••••••">
         </div>
 
-        <p v-if="errorMsg" class="error-msg active">{{ errorMsg }}</p>
-
         <button type="submit" class="btn btn-primary mt-2" :disabled="loading">
             {{ loading ? 'Conectando con los astros...' : 'Ingresar al Portal' }}
         </button>
@@ -26,6 +24,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuthService } from '../api'
@@ -33,14 +32,12 @@ import { AuthService } from '../api'
 const router = useRouter()
 const email = ref('')
 const password = ref('')
-const errorMsg = ref('')
 const loading = ref(false)
 
 const handleLogin = async () => {
     if (!email.value || !password.value) return
     
     loading.value = true
-    errorMsg.value = ''
 
     const { ok, data } = await AuthService.login(email.value, password.value)
 
@@ -54,7 +51,14 @@ const handleLogin = async () => {
             router.push('/dashboard-user')
         }
     } else {
-        errorMsg.value = data.msg || 'Credenciales incorrectas.'
+        Swal.fire({
+            title: 'Desconexión',
+            text: data.error || data.msg || 'Credenciales incorrectas.',
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
         loading.value = false
     }
 }

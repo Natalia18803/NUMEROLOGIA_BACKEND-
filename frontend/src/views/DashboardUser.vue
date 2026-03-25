@@ -76,7 +76,6 @@
 
             <div v-else>
                 <h3 class="text-center">Tus Lecturas Numerológicas</h3>
-                <p v-if="sysMsg" class="error-msg active">{{ sysMsg }}</p>
                 
                 <div class="reading-grid">
                     <div class="reading-card">
@@ -116,6 +115,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2'
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuthService, apiFetch } from '../api'
@@ -130,7 +130,6 @@ const dailyReading = ref(null)
 
 const paying = ref(false)
 const loadingData = ref(false)
-const sysMsg = ref('')
 
 onMounted(async () => {
     // 1. Get profile data
@@ -140,7 +139,8 @@ onMounted(async () => {
         router.push('/')
         return
     }
-    user.value = data.usuario
+    // Fix: Backend `getPerfil` returns the user directly, unlike login that wraps it in `usuario`.
+    user.value = data.usuario || data
     localStorage.setItem('user', JSON.stringify(user.value))
 
     // Pre-load logic if active
@@ -191,20 +191,32 @@ const simularPago = async () => {
     })
     
     if (ok) {
-        alert('¡Pago registrado con éxito!')
+        Swal.fire({
+            title: '¡Suscripción Activada!',
+            text: 'Bienvenido al Portal Místico.',
+            icon: 'success',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
         
-        // Refresh User profile internally to get updated state (active)
         const profileRes = await apiFetch('/auth/perfil')
         if (profileRes.ok) {
-            user.value = profileRes.data.usuario
+            user.value = profileRes.data.usuario || profileRes.data
             localStorage.setItem('user', JSON.stringify(user.value))
         }
 
-        // Re-load payments
         await loadPayments()
         paying.value = false
     } else {
-        alert(data.msg || 'Error al procesar el pago')
+        Swal.fire({
+            title: 'Error',
+            text: data.msg || 'Error al procesar el pago',
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
         paying.value = false
     }
 }
@@ -217,9 +229,15 @@ const generarLectura = async (tipo) => {
     if (ok) {
         if (tipo === 'principal') mainReading.value = data.lectura
         else dailyReading.value = data.lectura
-        sysMsg.value = ''
     } else {
-        sysMsg.value = data.msg || 'Error al generar lectura.'
+        Swal.fire({
+            title: 'Energías Bloqueadas',
+            text: data.msg || 'Error al generar lectura.',
+            icon: 'warning',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
     }
     loadingData.value = false
 }

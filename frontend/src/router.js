@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { AuthService } from './api'
+import Swal from 'sweetalert2'
 
 import Login from './views/Login.vue'
 import Register from './views/Register.vue'
@@ -20,19 +21,31 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const isAuthenticated = AuthService.isAuthenticated()
-  const user = AuthService.getUser()
+  const user = AuthService.getUser() || {}
+
+  const alertAccessDenied = (msg) => {
+      Swal.fire({
+          title: 'Acceso Denegado',
+          text: msg,
+          icon: 'error',
+          background: '#161224',
+          color: '#f8f8f8',
+          confirmButtonColor: '#d4af37'
+      })
+  }
 
   if (to.meta.requiresAuth && !isAuthenticated) {
+    alertAccessDenied('Debes iniciar sesión para entrar a este portal.')
     next({ name: 'Login' })
   } else if (to.name === 'Login' || to.name === 'Register') {
-    if (isAuthenticated) {
+    if (isAuthenticated && user.rol) {
       next(user.rol === 'admin' ? { name: 'DashboardAdmin' } : { name: 'DashboardUser' })
     } else {
       next()
     }
   } else if (to.meta.requiresAuth) {
-    // Check specific role
     if (to.meta.role && user.rol !== to.meta.role) {
+      alertAccessDenied('Tus energías no tienen permisos para estar aquí.')
       next(user.rol === 'admin' ? { name: 'DashboardAdmin' } : { name: 'DashboardUser' })
     } else {
       next()

@@ -24,8 +24,6 @@
             <input type="password" id="password" v-model="form.password" class="form-control" autocomplete="new-password" required placeholder="••••••••" minlength="6">
         </div>
 
-        <p v-if="errorMsg" class="error-msg active">{{ errorMsg }}</p>
-
         <button type="submit" class="btn btn-primary mt-2" :disabled="loading">
             {{ loading ? 'Calculando tus números...' : 'Revelar mi Destino' }}
         </button>
@@ -36,33 +34,49 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { AuthService } from '../api'
 
 const router = useRouter()
 const form = reactive({ nombre: '', email: '', fecha_nacimiento: '', password: '' })
-const errorMsg = ref('')
 const loading = ref(false)
 
 const handleRegister = async () => {
     if (!form.nombre || !form.email || !form.fecha_nacimiento || !form.password) return
     
     loading.value = true
-    errorMsg.value = ''
 
     const { ok, data } = await AuthService.register(form.nombre, form.email, form.password, form.fecha_nacimiento)
 
     if (ok && data.token && data.usuario) {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.usuario))
-        router.push('/dashboard-user')
+        
+        Swal.fire({
+            title: '¡Destino Revelado!',
+            text: 'Tu cuenta ha sido creada exitosamente.',
+            icon: 'success',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        }).then(() => {
+            router.push('/dashboard-user')
+        })
     } else {
-        if (data.errors && data.errors.length > 0) {
-            errorMsg.value = data.errors[0].msg
-        } else {
-            errorMsg.value = data.msg || 'Error al completar el registro.'
-        }
+        let msg = data.msg || 'Error al completar el registro.'
+        if (data.errors && data.errors.length > 0) msg = data.errors[0].msg
+        if (data.error) msg = data.error
+
+        Swal.fire({
+            title: 'Sincronización Fallida',
+            text: msg,
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
         loading.value = false
     }
 }
