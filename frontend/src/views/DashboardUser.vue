@@ -82,9 +82,9 @@
                         <h4 class="text-center">Mi Número Principal</h4>
                         <div class="text-center" style="margin-top: 1.5rem;">
                             <div v-if="mainReading">
-                                <div class="number-highlight">Nº {{ mainReading.numero_calculado }}</div>
-                                <div class="reading-text">{{ mainReading.mensaje }}</div>
-                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(mainReading.fecha_generacion) }}</p>
+                                <div class="number-highlight">Nº {{ extraerNumero(mainReading.contenido) }}</div>
+                                <div class="reading-text">{{ mainReading.contenido }}</div>
+                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(mainReading.fecha_lectura) }}</p>
                             </div>
                             <div v-else>
                                 <p style="margin-bottom:1rem; font-size:0.9rem;">Tu destino está oculto.</p>
@@ -97,9 +97,9 @@
                         <h4 class="text-center">Lectura Diaria (Hoy)</h4>
                         <div class="text-center" style="margin-top: 1.5rem;">
                             <div v-if="dailyReading">
-                                <div class="number-highlight">Nº {{ dailyReading.numero_calculado }}</div>
-                                <div class="reading-text">{{ dailyReading.mensaje }}</div>
-                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(dailyReading.fecha_generacion) }}</p>
+                                <div class="number-highlight">✨</div>
+                                <div class="reading-text">{{ dailyReading.contenido }}</div>
+                                <p style="font-size:0.8rem; color:gray; text-align:right; margin-top:1rem;">Generada: {{ formatearFecha(dailyReading.fecha_lectura) }}</p>
                             </div>
                             <div v-else>
                                 <p style="margin-bottom:1rem; font-size:0.9rem;">¿Qué te depara este día?</p>
@@ -245,6 +245,12 @@ const generarLectura = async (tipo) => {
 const formatearFecha = (fecha) => {
     if (!fecha) return '...'
     return new Date(fecha).toLocaleDateString('es-ES')
+}
+
+const extraerNumero = (texto) => {
+    if (!texto) return '?'
+    const match = texto.match(/\d+/)
+    return match ? match[0] : '?'
 }
 
 const logout = () => {
