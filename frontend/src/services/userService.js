@@ -2,7 +2,7 @@ import api from '../plugins/axios'
 
 class UserService {
   async getAllUsuarios() {
-    return api.get('/usuarios')
+    return api.get('/usuarios/todos')
   }
 
   async updateEstado(usuarioObj) {
