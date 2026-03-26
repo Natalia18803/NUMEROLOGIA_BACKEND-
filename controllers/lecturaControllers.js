@@ -79,14 +79,17 @@ export const generarLecturaDiaria = async (req, res) => {
     const manana = new Date(hoy);
     manana.setDate(manana.getDate() + 1);
 
-    const lecturaExistente = await Lectura.findOne({
-      usuario_id,
-      tipo: 'diaria',
-      fecha_lectura: { $gte: hoy, $lt: manana }
-    });
+    // Si el usuario es PREMIUM, no aplicamos la restricción de 24 horas
+    if (usuario.tipo_cuenta !== 'premium') {
+        const lecturaExistente = await Lectura.findOne({
+            usuario_id,
+            tipo: 'diaria',
+            fecha_lectura: { $gte: hoy, $lt: manana }
+        });
 
-    if (lecturaExistente) {
-      return res.status(400).json({ error: 'Ya existe una lectura diaria para hoy' });
+        if (lecturaExistente) {
+            return res.status(400).json({ error: 'Límite de lectura diaria alcanzado. ¡Suscríbete a Premium para consultas ilimitadas!' });
+        }
     }
 
     const contenido = generarContenidoIA('diaria', usuario.fecha_nacimiento);

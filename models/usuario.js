@@ -32,6 +32,11 @@ const usuarioSchema = new mongoose.Schema({
         enum: ['usuario', 'admin'],
         default: 'usuario'
     },
+    tipo_cuenta: {
+        type: String,
+        enum: ['basica', 'premium'],
+        default: 'basica'
+    },
     fecha_registro: {
         type: Date,
         default: Date.now

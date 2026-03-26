@@ -26,6 +26,9 @@
                 <span :class="['status-badge', user.estado === 'activo' ? 'bg-success' : 'bg-warning']" style="margin-left: 0.5rem;">
                     {{ user.estado === 'activo' ? 'Suscripción Activa' : 'Sin Suscripción (Inactivo)' }}
                 </span>
+                <span v-if="user.tipo_cuenta === 'premium'" class="status-badge bg-premium" style="margin-left: 0.5rem;">
+                    <i class="fas fa-crown"></i> Miembro Premium
+                </span>
             </div>
         </div>
 
@@ -37,7 +40,7 @@
                 <p v-else style="margin-bottom: 1rem; color: #28a745;">¡Tu suscripción está activa!</p>
                 
                 <button @click="handlePago" class="btn btn-primary" :disabled="paying" style="width: auto; min-width: 250px;">
-                    {{ paying ? 'Procesando...' : (user.estado === 'activo' ? 'Añadir un pago (Simulación)' : 'Pagar Suscripción (Simulación)') }}
+                    <i class="fab fa-shopify"></i> {{ paying ? 'Conectando con Mercado Pago...' : (user.tipo_cuenta === 'premium' ? 'Renovar Membresía Premium' : 'Activar Lecturas Ilimitadas (Premium)') }}
                 </button>
             </div>
 
@@ -85,8 +88,10 @@
                             <p class="hero-text">{{ dailyReading.contenido }}</p>
                             <p class="hero-date">Última Alineación: {{ formatearFechaHora(dailyReading.fecha_lectura) }}</p>
                             
-                            <div v-if="!isToday(dailyReading.fecha_lectura)" style="margin-top: 2rem;">
-                                <button @click="generarLectura('diaria')" class="btn btn-primary" :disabled="loadingData">Conectar con el Universo de Hoy</button>
+                             <div v-if="!isToday(dailyReading.fecha_lectura) || user.tipo_cuenta === 'premium'" style="margin-top: 2rem;">
+                                <button @click="generarLectura('diaria')" class="btn btn-primary" :disabled="loadingData">
+                                    {{ user.tipo_cuenta === 'premium' ? 'Generar Nueva Lectura Premium' : 'Conectar con el Universo de Hoy' }}
+                                </button>
                             </div>
                         </div>
                         <div v-else>
@@ -124,7 +129,10 @@ import { extraerNumero } from '../utils/extractNumber'
 import { useGeneralStore } from '../store/General'
 import pagoService from '../services/pagoService'
 import lecturaService from '../services/lecturaService'
+import mercadopagoService from '../services/mercadopagoService'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const store = useGeneralStore()
 const currentTab = ref('perfil')
 
@@ -148,6 +156,9 @@ onMounted(async () => {
         } else {
             currentTab.value = 'perfil'
         }
+
+        // Verificar resultados de pago en la URL
+        checkPaymentResult()
     } catch (e) {
         // Handled by store
     }
@@ -188,33 +199,45 @@ const loadPayments = async () => {
     }
 }
 
-const handlePago = async () => {
-    paying.value = true
-    try {
-        await pagoService.createPago({
-            usuario_id: user.value._id,
-            monto: 25.00,
-            metodo: 'tarjeta'
-        })
-        
+const checkPaymentResult = () => {
+    if (route.query.pago === 'exitoso') {
         Swal.fire({
-            title: '¡Suscripción Activada!',
-            text: 'Bienvenido al Portal Místico.',
+            title: '¡Pago Confirmado!',
+            text: 'Tu conexión con la Matriz ahora es Premium e ilimitada.',
             icon: 'success',
             background: '#161224',
             color: '#f8f8f8',
             confirmButtonColor: '#d4af37'
         })
+    } else if (route.query.pago === 'fallido') {
+        Swal.fire({
+            title: 'Pago Fallido',
+            text: 'Hubo un error al procesar tu transacción mística.',
+            icon: 'error',
+            background: '#161224',
+            color: '#f8f8f8',
+            confirmButtonColor: '#d4af37'
+        })
+    }
+}
+
+const handlePago = async () => {
+    paying.value = true
+    try {
+        const response = await mercadopagoService.createPreference({
+            usuario_id: user.value._id,
+            monto: 25.00
+        })
         
-        const updatedUser = await store.fetchProfile()
-        user.value = updatedUser
-        
-        await loadPayments()
+        // Redirigir al Checkout de Mercado Pago
+        if (response.data.init_point) {
+            window.location.href = response.data.init_point
+        }
     } catch (error) {
         const errData = error.response?.data || {}
         Swal.fire({
-            title: 'Error',
-            text: errData.msg || errData.error || 'Error al procesar el pago',
+            title: 'Error de Red',
+            text: errData.msg || errData.error || 'No se pudo conectar con Mercado Pago',
             icon: 'error',
             background: '#161224',
             color: '#f8f8f8',
@@ -290,4 +313,5 @@ const generarLectura = async (tipo, silent = false) => {
 .status-badge { display: inline-block; padding: 0.3em 0.8em; border-radius: 12px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
 .bg-success { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #28a745; }
 .bg-warning { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid #ffc107; }
+.bg-premium { background: rgba(212, 175, 55, 0.15); color: var(--primary-color); border: 1px solid var(--primary-color); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
 </style>

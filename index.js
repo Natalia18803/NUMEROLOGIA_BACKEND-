@@ -14,6 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import usuarioRoutes from './routes/usuarioRoutes.js';
 import pagoRoutes from './routes/pagoRoutes.js';
 import lecturaRoutes from './routes/lecturaRoutes.js';
+import mercadopagoRoutes from './routes/mercadopagoRoutes.js';
 import { validarJWT } from './middlewares/validar-jwt.js';
 
 const app = express();
@@ -85,6 +86,7 @@ app.use('/api/usuarios', usuarioRoutes);
 // Otras rutas
 app.use('/api/pagos', pagoRoutes);
 app.use('/api/lecturas', lecturaRoutes);
+app.use('/api/mercadopago', mercadopagoRoutes);
 
 // Ruta de prueba
 app.get('/api', (req, res) => {

@@ -1,5 +1,6 @@
 import Usuario from '../models/usuario.js';
 import jwt from 'jsonwebtoken';
+import emailService from '../services/emailService.js';
 
 // Helper para generar el Token (Asegúrate de tener JWT_SECRET en tu .env)
 const generarToken = (id, rol) => {
@@ -23,6 +24,9 @@ export const registro = async (req, res) => {
         await usuario.save();
 
         const token = generarToken(usuario._id, usuario.rol);
+        
+        // Enviar correo de bienvenida (proceso asíncrono en segundo plano)
+        emailService.enviarBienvenida(email, nombre);
 
         res.status(201).json({
             message: 'Usuario registrado exitosamente',
@@ -142,6 +146,10 @@ export const crearUsuarioAdmin = async (req, res) => {
 
         const usuario = new Usuario(data);
         await usuario.save();
+        
+        // Enviar correo de bienvenida al nuevo usuario (proceso asíncrono)
+        emailService.enviarBienvenida(email, nombre);
+
         res.status(201).json({ message: 'Usuario creado exitosamente desde admin', usuario });
     } catch (error) {
         res.status(500).json({ error: error.message });
